@@ -6,6 +6,7 @@ import ledtest
 import pixeltest
 import buttoncontroller
 import esp01stest
+import busio
 
 # Set up the onboard LED
 obled = digitalio.DigitalInOut(board.LED)
@@ -51,20 +52,25 @@ async def pulsetesting():
 # Define the main function
 async def main():
     # Await the testing function
-    await testing()
-    # Await the pulsetesting function
-    await pulsetesting()
-    # Await the buttontest function
-    try:
-        response = await buttoncontroller.monitorbuttons(button1, button2, button3)
-        print("Button {} was pressed".format(response))
-    except Exception as e:
-        print("Error: {}".format(e))
+    # await testing()
+    # # Await the pulsetesting function
+    # await pulsetesting()
+    # # Await the buttontest function
+    # try:
+    #     response = await buttoncontroller.monitorbuttons(button1, button2, button3)
+    #     print("Button {} was pressed".format(response))
+    # except Exception as e:
+    #     print("Error: {}".format(e))
     # Await the esp01stest function
-    try:
-        await esp01stest.wifipingtest("8.8.8.8")
-    except:
-        print("Error: {}".format(e))
+    # try:
+    # await esp01stest.wifipingtest("8.8.8.8")
+    # except:
+    #     print("Error: {}".format(e))
+    # Try to send a GET request to HTTPBin
+    # await esp01stest.getrequesttest()
+    crapwifi = esp01stest.esp01()
+    # await crapwifi.wifipingtest("8.8.8.8")
+    await crapwifi.getrequesttest()
 
 # Run the main function
 asyncio.run(main())

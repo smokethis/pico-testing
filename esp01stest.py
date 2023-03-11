@@ -28,53 +28,80 @@ import adafruit_requests as requests
 import adafruit_espatcontrol.adafruit_espatcontrol_socket as socket
 from adafruit_espatcontrol import adafruit_espatcontrol
 
+# Get wifi details and more from a secrets.py file
+try:
+    from my_secrets import secrets
+except ImportError:
+    print("All secret keys are kept in secrets.py, please add them there!")
+    raise
 
-async def wifipingtest(ipaddress):
-    """"
-    This function scans for available WiFi AP, connects to the speicifed AP and
-    ping the specified IP address.
+class esp01:
+    def __init__ (self):
+        # Initialize UART connection to the ESP8266 WiFi Module.
+        RX = board.GP17
+        TX = board.GP16
+        self.uart = busio.UART(TX, RX, receiver_buffer_size=2048)  # Use large buffer as we're not using hardware flow control.
+        self.esp = adafruit_espatcontrol.ESP_ATcontrol(self.uart, 115200, debug=False)
+        requests.set_socket(socket, self.esp)
+        print("Resetting ESP module")
+        self.esp.soft_reset()
 
-    Parameters:
-        ipaddress (string): The IP address to ping.
-    """
-    # Get wifi details and more from a secrets.py file
-    try:
-        from my_secrets import secrets
-    except ImportError:
-        print("All secret keys are kept in secrets.py, please add them there!")
-        raise
+    async def wifipingtest(self, ipaddress):
+        """"
+        This function scans for available WiFi AP, connects to the speicifed AP and
+        ping the specified IP address.
 
+        Parameters:
+            ipaddress (string): The IP address to ping.
+        """
+        # print("ESP Firmware Version:", self.esp.version)
 
-    # Initialize UART connection to the ESP8266 WiFi Module.
-    RX = board.GP17
-    TX = board.GP16
-    uart = busio.UART(TX, RX, receiver_buffer_size=2048)  # Use large buffer as we're not using hardware flow control.
+        first_pass = True
+        try:
+            if first_pass:
+                print("\nScanning nearby WiFi AP...")
+                for ap in self.esp.scan_APs():
+                    print(ap)
+                print("\nConnecting...")
+                self.esp.connect(secrets)
+                print("IP address:", self.esp.local_ip)
+                
+                print()
+                first_pass = False
 
-    esp = adafruit_espatcontrol.ESP_ATcontrol(uart, 115200, debug=False)
-    requests.set_socket(socket, esp)
+        except (ValueError, RuntimeError, adafruit_espatcontrol.OKError) as e:
+            print("Failed, retrying\n", e)
+        
+        # Run a ping test 3 times
+        for i in range(3):
+            print("Pinging 8.8.8.8...", end="")
+            print(self.esp.ping(ipaddress))
+            await asyncio.sleep(1)
 
-    print("Resetting ESP module")
-    esp.soft_reset()
-    print("ESP Firmware Version:", esp.version)
+    async def getrequesttest(self):
+        """"
+        This function scans for available WiFi AP, connects to the speicifed AP and
+        sends a GET request to the HTTPBin website.
+        """
+        # print("ESP Firmware Version:", self.esp.version)
+        try:
+                print("\nChecking WiFi connection...")
+                while not self.esp.is_connected:
+                    print("Connecting...")
+                    self.esp.connect(secrets)
+                
+                print("\nSending HTTPBin message...")
+                message = "Hello World from Circuitpython :)"
+                get_url = "http://www.httpbin.org"
+                get_url += "/anything"
+                get_url += "/sendMessage?chat_id="
+                get_url += "&text="
+                get_url += message
+                print("URL = ", get_url)
+                r = requests.get(get_url)
+                print("Sent OK")
+                print("HTTP Response Code: ", r.status_code)
+                print("Response text: ", r.text)
 
-    first_pass = True
-    try:
-        if first_pass:
-            print("\nScanning nearby WiFi AP...")
-            for ap in esp.scan_APs():
-                print(ap)
-            print("\nConnecting...")
-            esp.connect(secrets)
-            print("IP address:", esp.local_ip)
-            
-            print()
-            first_pass = False
-
-    except (ValueError, RuntimeError, adafruit_espatcontrol.OKError) as e:
-        print("Failed, retrying\n", e)
-    
-    # Run a ping test 3 times
-    for i in range(3):
-        print("Pinging 8.8.8.8...", end="")
-        print(esp.ping(ipaddress))
-        await asyncio.sleep(1)
+        except (ValueError, RuntimeError, adafruit_espatcontrol.OKError) as e:
+            print("Failed, retrying\n", e)
