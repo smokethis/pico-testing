@@ -1,0 +1,14 @@
+name: Push to USB
+on:
+  push:
+    branches:
+      - dev
+jobs:
+  push-to-usb:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Copy repository to USB
+        run: |
+          cp -r $GITHUB_WORKSPACE /Volumes/CIRCUITPY
