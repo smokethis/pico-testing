@@ -22,7 +22,7 @@ button3.direction = digitalio.Direction.INPUT
 button3.pull = digitalio.Pull.UP
 
 # Set up the onboard neopixel
-singlepixel = neopixelobject(board.GP28, 1)
+obpixel = neopixelobject(board.GP28, 1)
 
 async def blinkonboardled(count):
     # Blink the onboard LED a number of times
@@ -35,13 +35,13 @@ async def blinkonboardled(count):
 
 async def testsingleneopixel():
     # Test the onboard neopixel
-    singlepixel.set_pixel_colour((255, 0, 0), 0)
+    obpixel.set_pixel_colour((255, 0, 0), 0)
     await asyncio.sleep(1)
-    singlepixel.set_pixel_colour((0, 255, 0), 0)
+    obpixel.set_pixel_colour((0, 255, 0), 0)
     await asyncio.sleep(1)
-    singlepixel.set_pixel_colour((0, 0, 255), 0)
+    obpixel.set_pixel_colour((0, 0, 255), 0)
     await asyncio.sleep(1)
-    singlepixel.set_pixel_colour((0, 0, 0), 0)
+    obpixel.set_pixel_colour((0, 0, 0), 0)
     print("Single neopixel testing complete")
 
 
@@ -53,12 +53,12 @@ async def main():
     print("Testing onboard LED and onboard neopixel")
     # Create the testing tasks
     obled_task = asyncio.create_task(blinkonboardled(3))
-    neopixel_task = asyncio.create_task(testsingleneopixel())
+    obpixel_task = asyncio.create_task(testsingleneopixel())
     # Run the tasks
-    await asyncio.gather(obled_task, neopixel_task)
+    await asyncio.gather(obled_task, obpixel_task)
     print("Testing complete")
 
-    singlepixel.pulse_pixel_colour((255, 0, 0), 0.1, 0)
+    obpixel.pulse_pixel_colour((255, 0, 0), 0.1, 0)
     time.sleep(5)
     
 # Run the main function
