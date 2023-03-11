@@ -9,6 +9,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Sync repository to USB
+      - name: Sync changed repository Python to USB
         run: |
           rsync -a --include="*/" --include="*.py" --exclude="*" --update $GITHUB_WORKSPACE/ /Volumes/CIRCUITPY
