@@ -28,7 +28,10 @@ button3 = digitalio.DigitalInOut(board.GP22)
 button3.direction = digitalio.Direction.INPUT
 button3.pull = digitalio.Pull.UP
 
-async def testing():
+# Create the ESP01S object
+obwifi = esp01s.esp01()
+
+async def ledtesting():
     print("Testing onboard LED and onboard neopixel")
     # Create the testing tasks
     obled_task = asyncio.create_task(ledtest.blinkonboardled(obled, 3))
@@ -37,33 +40,8 @@ async def testing():
     await asyncio.gather(obled_task, neopixel_task)
     print("Testing complete")
 
-async def pulsetesting():
-    print("Testing onboard neopixel pulse")
-    # Create the testing tasks
-    neopixel_task = asyncio.create_task(pixeltest.pulseneopixel(obpixel))
-    # Run the tasks
-    await asyncio.gather(neopixel_task)
-    print("Testing complete")
-
-############################
-### --- Main program --- ###
-############################
-
-# Define the main function
-async def main():
-    # Await the testing function
-    await testing()
-    # Await the pulsetesting function
-    # await pulsetesting()
-    # Await the buttontest function
-    try:
-        response = await buttoncontroller.monitorbuttons(button1, button2, button3)
-        print("Button {} was pressed".format(response))
-    except Exception as e:
-        print("Error: {}".format(e))
-    # Create the ESP01S object
-    obwifi = esp01s.esp01()
-    # Testing WiFi connection and ping
+async def wifitesting():
+    # Testing WiFi connection and pin
     print("Testing WiFi connection...")
     await obwifi.wifipingtest("8.8.8.8")
     # Testing GET request
@@ -77,6 +55,29 @@ async def main():
         print("Response failed")
         print("Status code: {}".format(response.status_code))
 
+# Define the main function
+async def testing():
+    # Await the testing function
+    await ledtesting()
+    # Await the buttontest function
+    try:
+        response = await buttoncontroller.monitorbuttons(button1, button2, button3)
+        print("Button {} was pressed".format(response))
+    except Exception as e:
+        print("Error: {}".format(e))
+    # Await the wifitesting function
+    await wifitesting()
+
+############################
+### --- Main program --- ###
+############################
+
+# Run testing?
+runtest = False
+
+# Run testing if required
+if runtest == True:
+    asyncio.run(testing())
 
 # Run the main function
 asyncio.run(main())
