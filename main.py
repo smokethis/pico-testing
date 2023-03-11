@@ -5,7 +5,7 @@ import neopixel
 import ledtest
 import pixeltest
 import buttoncontroller
-import esp01stest
+import esp01s
 import busio
 
 # Set up the onboard LED
@@ -68,7 +68,7 @@ async def main():
     #     print("Error: {}".format(e))
     # Try to send a GET request to HTTPBin
     # await esp01stest.getrequesttest()
-    crapwifi = esp01stest.esp01()
+    crapwifi = esp01s.esp01()
     await crapwifi.wifipingtest("8.8.8.8")
     await crapwifi.getrequesttest()
 

@@ -54,31 +54,26 @@ class esp01:
         Parameters:
             ipaddress (string): The IP address to ping.
         """
-        # print("ESP Firmware Version:", self.esp.version)
-
-        first_pass = True
         try:
-            if first_pass:
-                print("\nScanning nearby WiFi AP...")
-                for ap in self.esp.scan_APs():
-                    print(ap)
-                print("\nConnecting...")
-                self.esp.connect(secrets)
-                print("IP address:", self.esp.local_ip)
-                
-                print()
-                first_pass = False
+            print("\nScanning nearby WiFi AP...")
+            for ap in self.esp.scan_APs():
+                print(ap)
+            print("\nConnecting...")
+            self.esp.connect(secrets)
+            print("IP address:", self.esp.local_ip)
+            
+            print()
 
         except (ValueError, RuntimeError, adafruit_espatcontrol.OKError) as e:
-            print("Failed, retrying\n", e)
+            print("Failed, \n", e)
         
         # Run a ping test 3 times
         for i in range(3):
-            print("Pinging 8.8.8.8...", end="")
+            print("Pinging ", ipaddress, end="")
             print(self.esp.ping(ipaddress))
             await asyncio.sleep(1)
 
-    async def getrequesttest(self):
+    async def getrequest(self):
         """"
         This function scans for available WiFi AP, connects to the speicifed AP and
         sends a GET request to the HTTPBin website.
@@ -104,4 +99,4 @@ class esp01:
                 print("Response text: ", r.text)
 
         except (ValueError, RuntimeError, adafruit_espatcontrol.OKError) as e:
-            print("Failed, retrying\n", e)
+            print("Failed, \n", e)
