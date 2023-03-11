@@ -10,6 +10,9 @@ import buttoncontroller
 obled = digitalio.DigitalInOut(board.LED)
 obled.direction = digitalio.Direction.OUTPUT
 
+# Set up the onboard neopixel
+obpixel = neopixel.NeoPixel(board.GP28, 1)
+
 # Set up the Maker Pi Pico buttons
 button1 = digitalio.DigitalInOut(board.GP20)
 button1.direction = digitalio.Direction.INPUT
@@ -22,9 +25,6 @@ button2.pull = digitalio.Pull.UP
 button3 = digitalio.DigitalInOut(board.GP22)
 button3.direction = digitalio.Direction.INPUT
 button3.pull = digitalio.Pull.UP
-
-# Set up the onboard neopixel
-obpixel = neopixel.NeoPixel(board.GP28, 1)
 
 async def testing():
     print("Testing onboard LED and onboard neopixel")
@@ -63,4 +63,6 @@ async def main():
 # Run the main function
 asyncio.run(main())
 
+##############################
 ### --- End of program --- ###
+##############################
