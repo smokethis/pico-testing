@@ -55,25 +55,27 @@ async def wifipingtest(ipaddress):
 
     print("Resetting ESP module")
     esp.soft_reset()
+    print("ESP Firmware Version:", esp.version)
 
     first_pass = True
     while True:
         try:
             if first_pass:
-                print("\nScanning for WiFi AP...")
+                print("\nScanning nearby WiFi AP...")
                 for ap in esp.scan_APs():
                     print(ap)
-                    
                 print("\nConnecting...")
                 esp.connect(secrets)
                 print("IP address:", esp.local_ip)
-                print("ESP Firmware Version:", esp.version)
+                
                 print()
                 first_pass = False
-                
-            print("Pinging 8.8.8.8...", end="")
-            print(esp.ping(ipaddress))
-            time.sleep(10)
-            
+
         except (ValueError, RuntimeError, adafruit_espatcontrol.OKError) as e:
             print("Failed, retrying\n", e)
+        
+        # Run a ping test 3 times
+        for i in range(3):
+            print("Pinging 8.8.8.8...", end="")
+            print(esp.ping(ipaddress))
+            time.sleep(1)
