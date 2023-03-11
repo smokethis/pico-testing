@@ -42,7 +42,7 @@ async def testsingleneopixel():
     obpixel.set_pixel_colour((0, 0, 255), 0)
     await asyncio.sleep(1)
     obpixel.set_pixel_colour((0, 0, 0), 0)
-    print("Single neopixel testing complete")
+    print("Onboard neopixel testing complete")
 
 
 
