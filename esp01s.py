@@ -73,30 +73,46 @@ class esp01:
             print(self.esp.ping(ipaddress))
             await asyncio.sleep(1)
 
-    async def getrequest(self):
+    async def getrequest(self, url):
         """"
-        This function scans for available WiFi AP, connects to the speicifed AP and
-        sends a GET request to the HTTPBin website.
+        This function sends a GET request to the specified url and returns the response.
+
+        Parameters:
+            url (string): The URL to send the GET request to.
         """
-        # print("ESP Firmware Version:", self.esp.version)
         try:
                 print("\nChecking WiFi connection...")
                 while not self.esp.is_connected:
                     print("Connecting...")
                     self.esp.connect(secrets)
                 
-                print("\nSending HTTPBin message...")
-                message = "Hello World from Circuitpython :)"
-                get_url = "http://www.httpbin.org"
-                get_url += "/anything"
-                get_url += "/sendMessage?chat_id="
-                get_url += "&text="
-                get_url += message
-                print("URL = ", get_url)
-                r = requests.get(get_url)
+                print("\nSending GET request...")
+                print("URL = ", url)
+                r = requests.get(url)
                 print("Sent OK")
-                print("HTTP Response Code: ", r.status_code)
-                print("Response text: ", r.text)
+                return r
+        
+        except (ValueError, RuntimeError, adafruit_espatcontrol.OKError) as e:
+            print("Failed, \n", e)
+    
+    async def postrequest(self, url):
+        """"
+        This function sends a POST request to the specified url and returns the response.
 
+        Parameters:
+            url (string): The URL to send the POST request to.
+        """
+        try:
+                print("\nChecking WiFi connection...")
+                while not self.esp.is_connected:
+                    print("Connecting...")
+                    self.esp.connect(secrets)
+                
+                print("\nSending POST request...")
+                print("URL = ", url)
+                r = requests.post(url)
+                print("Sent OK")
+                return r
+        
         except (ValueError, RuntimeError, adafruit_espatcontrol.OKError) as e:
             print("Failed, \n", e)
