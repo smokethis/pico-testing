@@ -3,8 +3,9 @@ from adafruit_led_animation.animation.colorcycle import ColorCycle
 from adafruit_led_animation.animation.pulse import Pulse
 from adafruit_led_animation.animation.rainbow import Rainbow
 import time
+import board
 
-class neopixelobject:
+class Neopixelcontroller:
 
     def __init__(self, pin, numpixels):
         """
