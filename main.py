@@ -82,6 +82,10 @@ runtest = False
 if runtest == True:
     asyncio.run(testing())
 
+# Test eink.py
+import eink
+eink()
+
 # Run the main function
 asyncio.run(main())
 
