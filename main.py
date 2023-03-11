@@ -5,6 +5,8 @@ import neopixel
 import ledtest
 import pixeltest
 import buttoncontroller
+import esp01s
+import busio
 
 # Set up the onboard LED
 obled = digitalio.DigitalInOut(board.LED)
@@ -52,13 +54,29 @@ async def main():
     # Await the testing function
     await testing()
     # Await the pulsetesting function
-    await pulsetesting()
+    # await pulsetesting()
     # Await the buttontest function
     try:
         response = await buttoncontroller.monitorbuttons(button1, button2, button3)
         print("Button {} was pressed".format(response))
     except Exception as e:
         print("Error: {}".format(e))
+    # Create the ESP01S object
+    obwifi = esp01s.esp01()
+    # Testing WiFi connection and ping
+    print("Testing WiFi connection...")
+    await obwifi.wifipingtest("8.8.8.8")
+    # Testing GET request
+    print("Testing GET request...")
+    # Check for a response from HTTPBin and print the body if it's OK
+    response = await obwifi.getrequest("https://httpbin.org/anything")
+    if response.status_code == 200:
+        print("Response OK")
+        print("Body: {}".format(response.text))
+    else:
+        print("Response failed")
+        print("Status code: {}".format(response.status_code))
+
 
 # Run the main function
 asyncio.run(main())
