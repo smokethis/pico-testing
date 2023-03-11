@@ -68,6 +68,9 @@ async def testing():
     # Await the wifitesting function
     await wifitesting()
 
+async def main():
+    print("Starting main program")
+
 ############################
 ### --- Main program --- ###
 ############################
