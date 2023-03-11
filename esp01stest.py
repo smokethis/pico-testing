@@ -21,7 +21,7 @@
 # Email: support@cytron.io
 ################################################################################
 
-import time
+import asyncio
 import board
 import busio
 import adafruit_requests as requests
@@ -58,24 +58,23 @@ async def wifipingtest(ipaddress):
     print("ESP Firmware Version:", esp.version)
 
     first_pass = True
-    while True:
-        try:
-            if first_pass:
-                print("\nScanning nearby WiFi AP...")
-                for ap in esp.scan_APs():
-                    print(ap)
-                print("\nConnecting...")
-                esp.connect(secrets)
-                print("IP address:", esp.local_ip)
-                
-                print()
-                first_pass = False
+    try:
+        if first_pass:
+            print("\nScanning nearby WiFi AP...")
+            for ap in esp.scan_APs():
+                print(ap)
+            print("\nConnecting...")
+            esp.connect(secrets)
+            print("IP address:", esp.local_ip)
+            
+            print()
+            first_pass = False
 
-        except (ValueError, RuntimeError, adafruit_espatcontrol.OKError) as e:
-            print("Failed, retrying\n", e)
-        
-        # Run a ping test 3 times
-        for i in range(3):
-            print("Pinging 8.8.8.8...", end="")
-            print(esp.ping(ipaddress))
-            time.sleep(1)
+    except (ValueError, RuntimeError, adafruit_espatcontrol.OKError) as e:
+        print("Failed, retrying\n", e)
+    
+    # Run a ping test 3 times
+    for i in range(3):
+        print("Pinging 8.8.8.8...", end="")
+        print(esp.ping(ipaddress))
+        await asyncio.sleep(1)
