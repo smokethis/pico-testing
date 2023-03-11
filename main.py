@@ -1,8 +1,9 @@
 import board
 import digitalio
 import asyncio
-from pixelcontroller import Neopixelcontroller
+import neopixel
 import ledtest
+import pixeltest
 
 # Set up the onboard LED
 obled = digitalio.DigitalInOut(board.LED)
@@ -22,19 +23,16 @@ button3.direction = digitalio.Direction.INPUT
 button3.pull = digitalio.Pull.UP
 
 # Set up the onboard neopixel
-singlepixel = Neopixelcontroller(board.GP28, 1)
+obpixel = neopixel.NeoPixel(board.GP28, 1)
 
-async def testsingleneopixel():
-    # Test the onboard neopixel
-    singlepixel.set_pixel_colour((255, 0, 0), 0)
-    await asyncio.sleep(1)
-    singlepixel.set_pixel_colour((0, 255, 0), 0)
-    await asyncio.sleep(1)
-    singlepixel.set_pixel_colour((0, 0, 255), 0)
-    await asyncio.sleep(1)
-    singlepixel.set_pixel_colour((0, 0, 0), 0)
-    print("Single neopixel testing complete")
-
+async def testing():
+    print("Testing onboard LED and onboard neopixel")
+    # Create the testing tasks
+    obled_task = asyncio.create_task(ledtest.blinkonboardled(obled, 3))
+    neopixel_task = asyncio.create_task(pixeltest.testsingleneopixel(obpixel))
+    # Run the tasks
+    await asyncio.gather(obled_task, neopixel_task)
+    print("Testing complete")
 
 ############################
 ### --- Main program --- ###
@@ -42,14 +40,8 @@ async def testsingleneopixel():
 
 # Define the main function
 async def main():
-    print("Testing onboard LED and onboard neopixel")
-    # Create the testing tasks
-    obled_task = asyncio.create_task(ledtest.blinkonboardled(obled, 3))
-    neopixel_task = asyncio.create_task(testsingleneopixel())
-    # Run the tasks
-    await asyncio.gather(obled_task, neopixel_task)
-    print("Testing complete")
-
+    # Run the testing function
+    await testing()
 # Run the main function
 asyncio.run(main())
 
