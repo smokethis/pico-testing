@@ -5,6 +5,7 @@ import neopixel
 import ledtest
 import pixeltest
 import buttoncontroller
+import esp01stest
 
 # Set up the onboard LED
 obled = digitalio.DigitalInOut(board.LED)
@@ -58,6 +59,11 @@ async def main():
         response = await buttoncontroller.monitorbuttons(button1, button2, button3)
         print("Button {} was pressed".format(response))
     except Exception as e:
+        print("Error: {}".format(e))
+    # Await the esp01stest function
+    try:
+        await esp01stest.wifipingtest("8.8.8.8")
+    except:
         print("Error: {}".format(e))
 
 # Run the main function
