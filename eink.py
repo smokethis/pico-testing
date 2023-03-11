@@ -26,7 +26,7 @@ display = Adafruit_EPD(EPD_HEIGHT, EPD_WIDTH, spi,          # 2.13" Tri-color di
                           cs_pin=ecs, dc_pin=dc, sramcs_pin=srcs,
                           rst_pin=rst, busy_pin=busy)
 
-display.rotation = 1
+# display.rotation = 1
 
 # clear the buffer
 print("Clear buffer")
