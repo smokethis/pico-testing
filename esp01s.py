@@ -69,7 +69,7 @@ class esp01:
         
         # Run a ping test 3 times
         for i in range(3):
-            print("Pinging ", ipaddress, end="")
+            print("Pinging ", ipaddress, "...", end="")
             print(self.esp.ping(ipaddress))
             await asyncio.sleep(1)
 
