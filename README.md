@@ -7,3 +7,5 @@ Includes fun features such as:
 - Buttons which can be pressed
 
 Stay tuned for even more excitement!
+
+*NOW INCLUDES FUNCTIONAL ESP01S WIFI Wooooooooo*
