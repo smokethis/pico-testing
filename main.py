@@ -34,10 +34,10 @@ async def testing():
     await asyncio.gather(obled_task, neopixel_task)
     print("Testing complete")
 
-async def pixeltest():
-    print("Testing neopixel")
+async def pulsetesting():
+    print("Testing onboard neopixel pulse")
     # Create the testing tasks
-    neopixel_task = asyncio.create_task(pixeltest.testsingleneopixel(obpixel))
+    neopixel_task = asyncio.create_task(pixeltest.pulseneopixel(obpixel))
     # Run the tasks
     await asyncio.gather(neopixel_task)
     print("Testing complete")
@@ -48,8 +48,11 @@ async def pixeltest():
 
 # Define the main function
 async def main():
-    # Run the testing function
+    # Await the testing function
     await testing()
+    # Await the pulsetesting function
+    await pulsetesting()
+
 # Run the main function
 asyncio.run(main())
 
