@@ -69,7 +69,7 @@ async def main():
     # Try to send a GET request to HTTPBin
     # await esp01stest.getrequesttest()
     crapwifi = esp01stest.esp01()
-    # await crapwifi.wifipingtest("8.8.8.8")
+    await crapwifi.wifipingtest("8.8.8.8")
     await crapwifi.getrequesttest()
 
 # Run the main function
