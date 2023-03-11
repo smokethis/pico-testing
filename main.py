@@ -1,7 +1,9 @@
 import board
 import digitalio
 import asyncio
-from pixelcontroller import Neopixelcontroller
+import neopixel
+import ledtest
+import pixeltest
 
 # Set up the onboard LED
 obled = digitalio.DigitalInOut(board.LED)
@@ -21,41 +23,35 @@ button3.direction = digitalio.Direction.INPUT
 button3.pull = digitalio.Pull.UP
 
 # Set up the onboard neopixel
+obpixel = neopixel.NeoPixel(board.GP28, 1)
 
-singlepixel = Neopixelcontroller(board.GP28, 1)
-async def blinkonboardled(count):
-    # Blink the onboard LED a number of times
-    for i in range(count):
-        obled.value = True
-        await asyncio.sleep(1)
-        obled.value = False
-        await asyncio.sleep(1)
-    print("Onboard LED testing complete")
-
-async def testsingleneopixel():
-    # Test the onboard neopixel
-    singlepixel.set_pixel_colour((255, 0, 0), 0)
-    await asyncio.sleep(1)
-    singlepixel.set_pixel_colour((0, 255, 0), 0)
-    await asyncio.sleep(1)
-    singlepixel.set_pixel_colour((0, 0, 255), 0)
-    await asyncio.sleep(1)
-    singlepixel.set_pixel_colour((0, 0, 0), 0)
-    print("Single neopixel testing complete")
-
-
-
-### --- Main program --- ###
-
-# Define the main function
-async def main():
+async def testing():
     print("Testing onboard LED and onboard neopixel")
     # Create the testing tasks
-    obled_task = asyncio.create_task(blinkonboardled(3))
-    neopixel_task = asyncio.create_task(testsingleneopixel())
+    obled_task = asyncio.create_task(ledtest.blinkonboardled(obled, 3))
+    neopixel_task = asyncio.create_task(pixeltest.testsingleneopixel(obpixel))
     # Run the tasks
     await asyncio.gather(obled_task, neopixel_task)
     print("Testing complete")
+
+async def pulsetesting():
+    print("Testing onboard neopixel pulse")
+    # Create the testing tasks
+    neopixel_task = asyncio.create_task(pixeltest.pulseneopixel(obpixel))
+    # Run the tasks
+    await asyncio.gather(neopixel_task)
+    print("Testing complete")
+
+############################
+### --- Main program --- ###
+############################
+
+# Define the main function
+async def main():
+    # Await the testing function
+    await testing()
+    # Await the pulsetesting function
+    await pulsetesting()
 
 # Run the main function
 asyncio.run(main())
