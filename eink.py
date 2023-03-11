@@ -5,12 +5,12 @@ from adafruit_epd.epd import Adafruit_EPD
 from adafruit_epd.il0373 import Adafruit_IL0373
 
 # create the spi device and pins we will need
-spi = busio.SPI(MOSI=board.GP19, MISO=board.GP16, clock=board.GP18)
-ecs = digitalio.DigitalInOut(board.GP17)
-dc = digitalio.DigitalInOut(board.GP15)
+spi = busio.SPI(MOSI=board.GP11, MISO=board.GP12, clock=board.GP10)
+ecs = digitalio.DigitalInOut(board.GP13)
+dc = digitalio.DigitalInOut(board.GP10)
 srcs = None    # can be None to use internal memory
-rst = digitalio.DigitalInOut(board.GP14)    # can be None to not use this pin
-busy = digitalio.DigitalInOut(board.GP20)   # can be None to not use this pin
+rst = digitalio.DigitalInOut(board.GP9)    # can be None to not use this pin
+busy = digitalio.DigitalInOut(board.GP8)   # can be None to not use this pin
 
 # give them all to our driver
 print("Creating display")
