@@ -5,7 +5,7 @@ from adafruit_epd.epd import Adafruit_EPD
 from adafruit_epd.il0373 import Adafruit_IL0373
 
 # create the spi device and pins we will need
-spi = busio.SPI(MOSI=board.GP11, MISO=board.GP12, clock=board.GP10)
+spi = busio.SPI(MOSI=board.GP11, MISO=board.GP12, clock=board.GP16)
 ecs = digitalio.DigitalInOut(board.GP13)
 dc = digitalio.DigitalInOut(board.GP10)
 srcs = None    # can be None to use internal memory
