@@ -4,6 +4,7 @@ import asyncio
 import neopixel
 import ledtest
 import pixeltest
+import buttontest
 
 # Set up the onboard LED
 obled = digitalio.DigitalInOut(board.LED)
@@ -52,6 +53,12 @@ async def main():
     await testing()
     # Await the pulsetesting function
     await pulsetesting()
+    # Await the buttontest function
+    try:
+        response = await buttontest.monitorbuttons(button1, button2, button3)
+        print("Button {} was pressed".format(response))
+    except Exception as e:
+        print("Error: {}".format(e))
 
 # Run the main function
 asyncio.run(main())
