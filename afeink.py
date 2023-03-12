@@ -30,6 +30,7 @@ display = Adafruit_EPD(EPD_HEIGHT, EPD_WIDTH, spi,          # 2.13" Tri-color di
 
 # clear the buffer
 print("Clear buffer")
+print(Adafruit_EPD)
 display.fill(Adafruit_EPD.WHITE)
 display.pixel(10, 100, Adafruit_EPD.BLACK)
 

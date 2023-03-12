@@ -83,8 +83,8 @@ if runtest == True:
     asyncio.run(testing())
 
 # Test eink.py
-import eink
-eink()
+import afeink
+afeink()
 
 # Run the main function
 asyncio.run(main())
