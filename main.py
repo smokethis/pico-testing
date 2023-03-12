@@ -6,7 +6,6 @@ import ledtest
 import pixeltest
 import buttoncontroller
 import esp01s
-import busio
 
 # Set up the onboard LED
 obled = digitalio.DigitalInOut(board.LED)
@@ -28,7 +27,10 @@ button3 = digitalio.DigitalInOut(board.GP22)
 button3.direction = digitalio.Direction.INPUT
 button3.pull = digitalio.Pull.UP
 
-async def testing():
+# Create the ESP01S object
+obwifi = esp01s.esp01()
+
+async def ledtesting():
     print("Testing onboard LED and onboard neopixel")
     # Create the testing tasks
     obled_task = asyncio.create_task(ledtest.blinkonboardled(obled, 3))
@@ -37,33 +39,8 @@ async def testing():
     await asyncio.gather(obled_task, neopixel_task)
     print("Testing complete")
 
-async def pulsetesting():
-    print("Testing onboard neopixel pulse")
-    # Create the testing tasks
-    neopixel_task = asyncio.create_task(pixeltest.pulseneopixel(obpixel))
-    # Run the tasks
-    await asyncio.gather(neopixel_task)
-    print("Testing complete")
-
-############################
-### --- Main program --- ###
-############################
-
-# Define the main function
-async def main():
-    # Await the testing function
-    await testing()
-    # Await the pulsetesting function
-    # await pulsetesting()
-    # Await the buttontest function
-    try:
-        response = await buttoncontroller.monitorbuttons(button1, button2, button3)
-        print("Button {} was pressed".format(response))
-    except Exception as e:
-        print("Error: {}".format(e))
-    # Create the ESP01S object
-    obwifi = esp01s.esp01()
-    # Testing WiFi connection and ping
+async def wifitesting():
+    # Testing WiFi connection and pin
     print("Testing WiFi connection...")
     await obwifi.wifipingtest("8.8.8.8")
     # Testing GET request
@@ -77,6 +54,69 @@ async def main():
         print("Response failed")
         print("Status code: {}".format(response.status_code))
 
+# Define the main function
+async def testing():
+    # Await the testing function
+    await ledtesting()
+    # Await the buttontest function
+    try:
+        response = await buttoncontroller.monitorbuttons(button1, button2, button3)
+        print("Button {} was pressed".format(response))
+    except Exception as e:
+        print("Error: {}".format(e))
+    # Await the wifitesting function
+    await wifitesting()
+
+async def main():
+    print("Starting main program")
+
+############################
+### --- Main program --- ###
+############################
+
+# Run testing?
+runtest = False
+
+# Run testing if required
+if runtest == True:
+    asyncio.run(testing())
+
+# Test eink display
+import epd2in66b
+print("Init eink display")
+epd = epd2in66b.EPD_2in9_B()
+
+print("Testing eink display")
+epd.Clear(0xff, 0xff)
+
+epd.imageblack.fill(0xff)
+epd.imagered.fill(0xff)
+epd.imageblack.text("Waveshare", 0, 10, 0x00)
+epd.imagered.text("ePaper-2.66-B", 0, 25, 0x00)
+epd.imageblack.text("RPi Pico", 0, 40, 0x00)
+epd.imagered.text("Hello World", 0, 55, 0x00)
+epd.display()
+epd.delay_ms(2000)
+
+epd.imagered.vline(10, 90, 40, 0x00)
+epd.imagered.vline(90, 90, 40, 0x00)
+epd.imageblack.hline(10, 90, 80, 0x00)
+epd.imageblack.hline(10, 130, 80, 0x00)
+epd.imagered.line(10, 90, 90, 130, 0x00)
+epd.imageblack.line(90, 90, 10, 130, 0x00)
+epd.display()
+epd.delay_ms(2000)
+
+epd.imageblack.rect(10, 150, 40, 40, 0x00)
+epd.imagered.fill_rect(60, 150, 40, 40, 0x00)
+epd.display()
+epd.delay_ms(5000)
+
+    
+epd.Clear(0xff, 0xff)
+epd.delay_ms(2000)
+print("sleep")
+epd.sleep()
 
 # Run the main function
 asyncio.run(main())
