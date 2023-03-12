@@ -9,3 +9,5 @@ Includes fun features such as:
 Stay tuned for even more excitement!
 
 *NOW INCLUDES FUNCTIONAL ESP01S WIFI Wooooooooo*
+
+## ALSO INCLUDES WAVESHARE EPAPER FUNCTIONALITY Woooooooooooooooo

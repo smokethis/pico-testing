@@ -11,4 +11,4 @@ jobs:
         uses: actions/checkout@v2
       - name: Sync changed repository Python to USB
         run: |
-          rsync -a --include="*/" --include="*.py" --exclude="*" --update $GITHUB_WORKSPACE/ /Volumes/CIRCUITPY
+          rsync -a --include="*/" --include="*.py" --exclude="*" --exclude="my_secrets.py" --update $GITHUB_WORKSPACE/ /Volumes/CIRCUITPY
