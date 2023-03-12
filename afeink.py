@@ -19,18 +19,15 @@ print("Creating display")
 #                           rst_pin=rst, busy_pin=busy)
 
 # Display resolution
-EPD_WIDTH       = 152
-EPD_HEIGHT      = 296
+EPD_WIDTH       = 296
+EPD_HEIGHT      = 152
 
-display = Adafruit_EPD(EPD_HEIGHT, EPD_WIDTH, spi,          # 2.13" Tri-color display
-                          cs_pin=ecs, dc_pin=dc, sramcs_pin=srcs,
-                          rst_pin=rst, busy_pin=busy)
+display = Adafruit_EPD(EPD_HEIGHT, EPD_WIDTH, spi, cs_pin=ecs, dc_pin=dc, sramcs_pin=srcs, rst_pin=rst, busy_pin=busy)
 
 # display.rotation = 1
-
+Adafruit_EPD
 # clear the buffer
 print("Clear buffer")
-print(Adafruit_EPD)
 display.fill(Adafruit_EPD.WHITE)
 display.pixel(10, 100, Adafruit_EPD.BLACK)
 

@@ -6,7 +6,6 @@ import ledtest
 import pixeltest
 import buttoncontroller
 import esp01s
-import busio
 
 # Set up the onboard LED
 obled = digitalio.DigitalInOut(board.LED)
@@ -82,9 +81,42 @@ runtest = False
 if runtest == True:
     asyncio.run(testing())
 
-# Test eink.py
-import afeink
-afeink()
+# Test eink display
+import epd2in66b
+print("Init eink display")
+epd = epd2in66b.EPD_2in9_B()
+
+print("Testing eink display")
+epd.Clear(0xff, 0xff)
+
+epd.imageblack.fill(0xff)
+epd.imagered.fill(0xff)
+epd.imageblack.text("Waveshare", 0, 10, 0x00)
+epd.imagered.text("ePaper-2.66-B", 0, 25, 0x00)
+epd.imageblack.text("RPi Pico", 0, 40, 0x00)
+epd.imagered.text("Hello World", 0, 55, 0x00)
+epd.display()
+epd.delay_ms(2000)
+
+epd.imagered.vline(10, 90, 40, 0x00)
+epd.imagered.vline(90, 90, 40, 0x00)
+epd.imageblack.hline(10, 90, 80, 0x00)
+epd.imageblack.hline(10, 130, 80, 0x00)
+epd.imagered.line(10, 90, 90, 130, 0x00)
+epd.imageblack.line(90, 90, 10, 130, 0x00)
+epd.display()
+epd.delay_ms(2000)
+
+epd.imageblack.rect(10, 150, 40, 40, 0x00)
+epd.imagered.fill_rect(60, 150, 40, 40, 0x00)
+epd.display()
+epd.delay_ms(5000)
+
+    
+epd.Clear(0xff, 0xff)
+epd.delay_ms(2000)
+print("sleep")
+epd.sleep()
 
 # Run the main function
 asyncio.run(main())
