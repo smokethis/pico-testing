@@ -6,6 +6,8 @@ import ledtest
 import pixeltest
 import buttoncontroller
 import esp01s
+from my_secrets import secrets
+import msonlinehandler
 
 # Set up the onboard LED
 obled = digitalio.DigitalInOut(board.LED)
@@ -93,7 +95,7 @@ async def epdtesting():
     print("sleep")
     epd.sleep()
 
-# Define the main function
+# Define the testing function
 async def testing():
     # Await the testing function
     await ledtesting()
@@ -108,8 +110,23 @@ async def testing():
     # Await the epdtesting function
     await epdtesting()
 
+# Define the main function
 async def main():
     print("Starting main program")
+    print("Connecting to WiFi...")
+    obwifi.esp.connect(secrets)
+    # Get Azure AD token
+    print("Getting Azure AD token...")
+    aadtoken = msonlinehandler.aadtoken()
+    aadtoken.gettoken(obwifi)
+    
+    
+    # print("Doing detailed request...")
+    # requestcontent = esp01s.requestcontent(method="GET", url="https://httpbin.org/anything", headers={"bum": "poo"}, json={"farts": "bags"})
+    # response = await obwifi.placefullrequest(requestcontent)
+    # print("Response: {}".format(response.text))
+    # print("Response code: {}".format(response.status_code))
+    print("Main program complete")
 
 ############################
 ### --- Main program --- ###
