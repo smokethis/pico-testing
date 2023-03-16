@@ -8,6 +8,7 @@ import buttoncontroller
 import esp01s
 from my_secrets import secrets
 import msonlinehandler
+import writeepd
 
 # Set up the onboard LED
 obled = digitalio.DigitalInOut(board.LED)
@@ -33,9 +34,7 @@ button3.pull = digitalio.Pull.UP
 obwifi = esp01s.esp01()
 
 # Create Waveshare eink display
-import epd2in66b
-print("Init eink display")
-epd = epd2in66b.EPD_2in9_B()
+epd = writeepd.waveshare_eink()
 
 async def ledtesting():
     print("Testing onboard LED and onboard neopixel")
@@ -61,39 +60,7 @@ async def wifitesting():
         print("Response failed")
         print("Status code: {}".format(response.status_code))
 
-async def epdtesting():
-    # Run the eink display test
-    print("Testing eink display")
-    epd.Clear(0xff, 0xff)
 
-    epd.imageblack.fill(0xff)
-    epd.imagered.fill(0xff)
-    epd.imageblack.text("Waveshare", 0, 10, 0x00)
-    epd.imagered.text("ePaper-2.66-B", 0, 25, 0x00)
-    epd.imageblack.text("RPi Pico", 0, 40, 0x00)
-    epd.imagered.text("Hello World", 0, 55, 0x00)
-    epd.display()
-    epd.delay_ms(2000)
-
-    epd.imagered.vline(10, 90, 40, 0x00)
-    epd.imagered.vline(90, 90, 40, 0x00)
-    epd.imageblack.hline(10, 90, 80, 0x00)
-    epd.imageblack.hline(10, 130, 80, 0x00)
-    epd.imagered.line(10, 90, 90, 130, 0x00)
-    epd.imageblack.line(90, 90, 10, 130, 0x00)
-    epd.display()
-    epd.delay_ms(2000)
-
-    epd.imageblack.rect(10, 150, 40, 40, 0x00)
-    epd.imagered.fill_rect(60, 150, 40, 40, 0x00)
-    epd.display()
-    epd.delay_ms(5000)
-
-        
-    epd.Clear(0xff, 0xff)
-    epd.delay_ms(2000)
-    print("sleep")
-    epd.sleep()
 
 # Define the testing function
 async def testing():
@@ -107,8 +74,6 @@ async def testing():
         print("Error: {}".format(e))
     # Await the wifitesting function
     await wifitesting()
-    # Await the epdtesting function
-    await epdtesting()
 
 # Define the main function
 async def main():
@@ -118,14 +83,9 @@ async def main():
     # Get Azure AD token
     print("Getting Azure AD token...")
     aadtoken = msonlinehandler.aadtoken()
-    aadtoken.gettoken(obwifi)
+    await aadtoken.gettoken(obwifi, epd)
     
     
-    # print("Doing detailed request...")
-    # requestcontent = esp01s.requestcontent(method="GET", url="https://httpbin.org/anything", headers={"bum": "poo"}, json={"farts": "bags"})
-    # response = await obwifi.placefullrequest(requestcontent)
-    # print("Response: {}".format(response.text))
-    # print("Response code: {}".format(response.status_code))
     print("Main program complete")
 
 ############################

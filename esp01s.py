@@ -153,7 +153,18 @@ class esp01:
                 print("\nSending request...")
                 print("Method = ", content.method)
                 print("URL = ", content.url)
-                r = requests.get(content.url, data = content.data, json = content.json, headers = content.headers, stream = content.stream, timeout = content.timeout)
+                if content.method == "GET":
+                    r = requests.get(content.url, data = content.data, json = content.json, headers = content.headers, stream = content.stream, timeout = content.timeout)
+                elif content.method == "POST":
+                    r = requests.post(content.url, data = content.data, json = content.json, headers = content.headers, stream = content.stream, timeout = content.timeout)
+                elif content.method == "PUT":
+                    r = requests.put(content.url, data = content.data, json = content.json, headers = content.headers, stream = content.stream, timeout = content.timeout)
+                elif content.method == "DELETE":
+                    r = requests.delete(content.url, data = content.data, json = content.json, headers = content.headers, stream = content.stream, timeout = content.timeout)
+                elif content.method == "HEAD":
+                    r = requests.head(content.url, data = content.data, json = content.json, headers = content.headers, stream = content.stream, timeout = content.timeout)
+                else:
+                    raise ValueError("Unsupported HTTP method. Use GET, POST, PUT, DELETE or HEAD.")
                 print("Sent OK")
                 return r
         except (ValueError, RuntimeError, adafruit_espatcontrol.OKError) as e:

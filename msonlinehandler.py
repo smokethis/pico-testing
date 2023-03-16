@@ -1,41 +1,60 @@
 from adafruit_datetime import datetime, timedelta
-import my_secrets as secrets
+from my_secrets import secrets
+import asyncio
+import writeepd
+import esp01s
 
 class aadtoken():
-    # This class is used to get an AAD token from the Azure AD endpoint.
+    # This class is used to get an AAD access token from the Azure AD endpoint using the device code grant.
     # The token is used to authenticate with the Microsoft Graph API.
     # The token is valid for 1 hour.
-    # The token is stored in the class variable self.token.
+    # The token is stored in the class variable self.accesstoken.
     # The token is refreshed when the class method gettoken() is called and the token is less than 5 minutes old.
+    def __init__(self):
+        # Define the class variables
+        self.accesstoken = None
+        self.tokenexpiry = None
+        self.refreshtoken = None
+        self.idtoken = None
+        self.scope = None
     
-    # Define the class variables
-    token = None
-    tokenexpiry = None
-
     # Define the class methods
-    async def gettoken(self, obwifi):
-        # This function gets an AAD token from the Azure AD endpoint.
-        
+    async def gettoken(self, obwifi, epd):
+        # This function checks if the access token is less than 5 minutes old.
         # Check if the token is less than 5 minutes old
         if self.tokenexpiry != None and self.tokenexpiry > datetime.now() + timedelta(minutes = 5):
             # Token is less than 5 minutes old, so return the current token
-            return self.token
-        
-        # Token is more than 5 minutes old, so get a new token
+            return self.accesstoken
+        # Check if token has expired
+        elif self.tokenexpiry != None and self.tokenexpiry < datetime.now():
+            # Token has expired, so get a new token
+            await self.getnewtokens(obwifi, epd)
+        # Check for a valid refresh token
+        elif self.refreshtoken == None:
+            # No refresh token, start new token request
+            await self.getnewtokens(obwifi, epd)
+        elif self.refreshtoken != None:
+            # Refresh token exists, so use it to get a new token
+            await self.getnewtokenfromrefresh(obwifi, epd)
+
+    async def getnewtokens(self, obwifi, epd):
+        # This function gets a new AAD token from the Azure AD endpoint.
+        # Create a task to clear the display
+        # cleardisplay = asyncio.create_task(epd.epdclear())
         # Define the request parameters
         headers = {
             'Content-Type': 'application/x-www-form-urlencoded'
         }
         data = {
-            'grant_type': 'client_credentials',
+            'grant_type': 'device_code',
             'client_id': secrets["clientid"],
             'client_secret': secrets["clientsecret"],
-            'resource': 'https://graph.microsoft.com'
+            'scope': 'User.Read'
         }
-        
+
         # Send the request
         print("Getting AAD token...")
-        response = await obwifi.placefullrequest(obwifi.esp01s.requestcontent("POST", "https://login.microsoftonline.com/{}/oauth2/v2.0/token".format(secrets["tenantid"]), headers=headers, data=data))
+        response = await obwifi.placefullrequest(esp01s.requestcontent("POST", "https://login.microsoftonline.com/{}/oauth2/v2.0/devicecode".format(secrets["tenantid"]), headers=headers, data=data))
         print("Done")
         
         # Check the response
@@ -43,9 +62,75 @@ class aadtoken():
             # There was an error, so raise an exception
             raise Exception("Error getting AAD token. Status code: {}. Response: {}".format(response.status_code, response.text))
         
-        # Get the token
-        self.token = response.json()['access_token']
-        self.tokenexpiry = datetime.now() + timedelta(seconds = response.json()['expires_in'])
+        print(response.json())
+        # Store response data
+        usercode = response.json()['user_code']
+        devicecode = response.json()['device_code']
+        verifyurl = response.json()['verification_uri']
+        interval = response.json()['interval']
         
-        # Return the token
-        return self.token
+        # Construct the message to display
+        message = []
+        # Message must be in dictionary format with the following keys:
+        # text - The text to display
+        # x - The x position of the text
+        # y - The y position of the text
+        # colour - The colour of the text
+        # size - The size of the text
+        # The message must be a list of dictionaries
+        message.append({'text': 'Please go to:', 'x': 0, 'y': 0, 'colour': 'black', 'size': 0})
+        message.append({'text': verifyurl, 'x': 0, 'y': 20, 'colour': 'red', 'size': 0})
+        message.append({'text': 'and enter the code:', 'x': 0, 'y': 40, 'colour': 'black', 'size': 0})
+        message.append({'text': usercode, 'x': 0, 'y': 60, 'colour': 'red', 'size': 2})
+        
+        # Wait for the displaytask to complete 
+        # Create a task to display the user code
+        await epd.writetext(message)
+        
+        # Start polling for the access token
+        # Define the request parameters
+        headers = {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+        data = {
+            'grant_type': 'urn:ietf:params:oauth:grant-type:device_code',
+            'client_id': secrets["clientid"],
+            'client_secret': secrets["clientsecret"],
+            'device_code': devicecode,
+            'scope': 'User.Read'
+        }
+
+        # Loop requesting the access tokens until it is ready or the user declines the request
+        while True:
+            print("Polling for AAD token...")
+            # Send the request
+            response = await obwifi.placefullrequest(esp01s.requestcontent("POST", "https://login.microsoftonline.com/{}/oauth2/v2.0/token".format(secrets["tenantid"]), headers=headers, data=data, timeout=interval))
+            print("Done")
+            # Print the response
+            print(response.json())
+            # Check the response for expected errors
+            if response.status_code == 400 and response.json()['error'] == 'authorization_pending':
+                # The token is not ready yet, so wait [interval] seconds and try again
+                print("Waiting for user to accept the request... sleeping for {} seconds".format(interval))
+                continue
+            elif response.status_code == 400 and response.json()['error'] == 'authorization_declined':
+                # The user declined the request, so raise an exception
+                raise Exception("User declined the request")
+            elif response.status_code != 200:
+                # There was an unexpected error, so raise an exception
+                raise Exception("Error getting AAD token. Status code: {}. Response: {}".format(response.status_code, response.text))
+            elif response.status_code == 200:
+                # The token is ready, so break out of the loop
+                break
+            else:
+                # There was an unexpected error, so raise an exception
+                raise Exception("Error getting AAD token. Status code: {}. Response: {}".format(response.status_code, response.text))
+        
+        # Clear the display
+        # asyncio.create_task(epd.epdclear())
+        # return response.json()['access_token'], response.json()['refresh_token'], response.json()['id_token'], response.json()['scope'], response.json()['expires_in']
+        # self.refreshtoken = response.json()['refresh_token']
+        # self.idtoken = response.json()['id_token']
+        self.accesstoken = response.json()['access_token']
+        self.scope = response.json()['scope']
+        self.tokenexpiry = datetime.now() + timedelta(seconds = response.json()['expires_in'])
