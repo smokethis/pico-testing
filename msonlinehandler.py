@@ -19,7 +19,7 @@ class aadtoken():
         self.scope = None
     
     # Define the class methods
-    async def gettoken(self, wifi, epd):
+    async def gettoken(self, wifi, epd, led, pixel):
         # This function checks if the access token is less than 5 minutes old.
         # Check if the token is less than 5 minutes old
         if self.tokenexpiry != None and self.tokenexpiry > datetime.now() + timedelta(minutes = 5):
@@ -28,7 +28,7 @@ class aadtoken():
         # Check if token has expired
         elif self.tokenexpiry != None and self.tokenexpiry < datetime.now():
             # Token has expired, so get a new token
-            await self.getnewtokens(wifi, epd)
+            await self.getnewtokens(wifi, epd, led, pixel)
         # Check for a valid refresh token
         elif self.refreshtoken == None:
             # No refresh token, start new token request
@@ -37,7 +37,7 @@ class aadtoken():
             # Refresh token exists, so use it to get a new token
             await self.getnewtokenfromrefresh(wifi, epd)
 
-    async def getnewtokens(self, wifi, epd, led):
+    async def getnewtokens(self, wifi, epd, led, pixel):
         # This function gets a new AAD token from the Azure AD endpoint.
         # Create a task to clear the display
         # cleardisplay = asyncio.create_task(epd.epdclear())
