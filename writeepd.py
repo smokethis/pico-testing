@@ -62,7 +62,7 @@ class waveshare_eink:
         # Loop through the text dictionary
         for line in text:
             # Check if the line is red or black
-            print(line["text"])
+            # print(line["text"])
             if line["colour"] == "red":
                 self.epd.imagered.text(line["text"], line["x"], line["y"], color=0x00, size=line["size"])
             else:

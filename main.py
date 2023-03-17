@@ -9,6 +9,7 @@ import esp01s
 from my_secrets import secrets
 import msonlinehandler
 import writeepd
+import datetime
 
 # Set up the onboard LED
 obled = ledcontroller.obled()
@@ -30,7 +31,7 @@ button3.direction = digitalio.Direction.INPUT
 button3.pull = digitalio.Pull.UP
 
 # Create the ESP01S object
-obwifi = esp01s.esp01()
+espwifi = esp01s.esp01()
 
 # Create Waveshare eink display
 epd = writeepd.waveshare_eink()
@@ -47,11 +48,11 @@ async def ledtesting():
 async def wifitesting():
     # Testing WiFi connection and pin
     print("Testing WiFi connection...")
-    await obwifi.wifipingtest("8.8.8.8")
+    await espwifi.wifipingtest("8.8.8.8")
     # Testing GET request
     print("Testing GET request...")
     # Check for a response from HTTPBin and print the body if it's OK
-    response = await obwifi.getrequest("https://httpbin.org/anything")
+    response = await espwifi.getrequest("https://httpbin.org/anything")
     if response.status_code == 200:
         print("Response OK")
         print("Body: {}".format(response.text))
@@ -74,17 +75,39 @@ async def testing():
     # Await the wifitesting function
     await wifitesting()
 
+# Get next event in a list
+async def get_next_event(events):
+    now = datetime.datetime.now()
+    future_events = [event for event in events if event['start'] > now]
+    if not future_events:
+        return None
+    next_event = min(future_events, key=lambda event: event['start'])
+    return next_event
+
 # Define the main function
 async def main():
     print("Starting main program")
     print("Connecting to WiFi...")
-    obwifi.esp.connect(secrets)
+    espwifi.esp.connect(secrets)
     # Get Azure AD token
     print("Getting Azure AD token...")
-    aadtoken = msonlinehandler.aadtoken()
-    await aadtoken.gettoken(obwifi, epd, obled, obpixel)
-    
-    
+    msapi = msonlinehandler.aadtoken()
+    await msapi.gettoken(espwifi, epd, obled, obpixel)
+    # Get today's calendar
+    today = await msapi.gettodayscalendar(espwifi)
+    # Write the calendar to the console
+    print("Today's calendar:")
+    print(today)
+    input("Press enter to continue...")
+    # Get the next event
+    nextevent = await get_next_event(today)
+    print("Next event:")
+    print(nextevent)
+    input("Press enter to continue...")
+    # Fetch the next calendar event
+    # nextevent = today
+    # await epd.writetodisplay(today)
+
     print("Main program complete")
 
 ############################

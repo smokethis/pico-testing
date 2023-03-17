@@ -2,6 +2,7 @@ from adafruit_datetime import datetime, timedelta
 from my_secrets import secrets
 import asyncio
 import esp01s
+import json
 
 class aadtoken():
     # This class is used to get an AAD access token from the Azure AD endpoint using the device code grant.
@@ -36,7 +37,7 @@ class aadtoken():
             # Refresh token exists, so use it to get a new token
             await self.getnewtokenfromrefresh(wifi, epd)
 
-    async def getnewtokens(self, wifi, epd, led, pixel):
+    async def getnewtokens(self, wifi, epd, led):
         # This function gets a new AAD token from the Azure AD endpoint.
         # Create a task to clear the display
         # cleardisplay = asyncio.create_task(epd.epdclear())
@@ -50,7 +51,8 @@ class aadtoken():
             'scope': 'User.Read'
         }
         # Flash the onboard LED to indicate the request is being sent
-        
+        ledtask = asyncio.create_task(led.flashonboardledforever(led, 0.5))
+        asyncio.run(ledtask)
         # Send the request
         print("Getting AAD token...")
         response = await wifi.placefullrequest(esp01s.requestcontent("POST", "https://login.microsoftonline.com/{}/oauth2/v2.0/devicecode".format(secrets["tenantid"]), headers=headers, data=data))
@@ -68,6 +70,10 @@ class aadtoken():
         verifyurl = response.json()['verification_uri']
         interval = response.json()['interval']
         
+        # Stop flashing the onboard LED
+        ledtask.cancel()
+        await ledtask
+
         # Construct the message to display
         message = []
         # Message must be in dictionary format with the following keys:
@@ -138,5 +144,20 @@ class aadtoken():
         # Display task is complete, so clear the display
         dislplaytask = asyncio.create_task(epd.epdclear())
         asyncio.run(displaytask)
-        
- 
+    
+    async def gettodayscalendar(self, wifi):
+        # Use Microsoft Graph API to get today's calendar events for the user
+        # Define the request parameters
+        headers = {
+            'Authorization': 'Bearer {}'.format(self.accesstoken),
+            'Content-Type': 'application/json'
+        }
+        query = "id,subject,start,end"
+        # Send the request
+        response = await wifi.placefullrequest(esp01s.requestcontent("GET", "https://graph.microsoft.com/v1.0/me/calendarview?startdatetime={}&enddatetime={}&$select={}".format(datetime.now().strftime("%Y-%m-%dT00:00:00"), datetime.now().strftime("%Y-%m-%dT23:59:59"), query), headers=headers))
+        # Check the response
+        if response.status_code != 200:
+            # There was an error, so raise an exception
+            raise Exception("Error getting calendar events. Status code: {}. Response: {}".format(response.status_code, response.text))
+        # Return the response
+        return json.loads(response.text)
