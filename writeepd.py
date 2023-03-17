@@ -64,8 +64,8 @@ class waveshare_eink:
             # Check if the line is red or black
             print(line["text"])
             if line["colour"] == "red":
-                self.epd.imagered.text(line["text"], line["x"], line["y"], color=0xFF, size=line["size"])
+                self.epd.imagered.text(line["text"], line["x"], line["y"], color=0x00, size=line["size"])
             else:
-                self.epd.imageblack.text(line["text"], line["x"], line["y"], color=0xFF, size=line["size"])
+                self.epd.imageblack.text(line["text"], line["x"], line["y"], color=0x00, size=line["size"])
         self.epd.display()
         self.epd.delay_ms(2000)
