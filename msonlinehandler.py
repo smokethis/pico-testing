@@ -48,7 +48,6 @@ class aadtoken():
         data = {
             'grant_type': 'device_code',
             'client_id': secrets["clientid"],
-            'client_secret': secrets["clientsecret"],
             'scope': 'User.Read'
         }
 
@@ -95,7 +94,6 @@ class aadtoken():
         data = {
             'grant_type': 'urn:ietf:params:oauth:grant-type:device_code',
             'client_id': secrets["clientid"],
-            'client_secret': secrets["clientsecret"],
             'device_code': devicecode,
             'scope': 'User.Read'
         }
