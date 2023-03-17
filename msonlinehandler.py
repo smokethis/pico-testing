@@ -75,12 +75,12 @@ class aadtoken():
         # x - The x position of the text
         # y - The y position of the text
         # colour - The colour of the text (black or red)
-        # size - The size of the text (1 = 8px, 2 = 16px etc)
+        # size - The size of the text (1 = 8px, 2 = 16px, 3 = 24px etc)
         # The message must be a list of dictionaries
         message.append({'text': 'Please go to:', 'x': 0, 'y': 0, 'colour': 'black', 'size': 1})
         message.append({'text': verifyurl, 'x': 0, 'y': 20, 'colour': 'red', 'size': 1})
         message.append({'text': 'and enter the code:', 'x': 0, 'y': 40, 'colour': 'black', 'size': 1})
-        message.append({'text': usercode, 'x': 0, 'y': 60, 'colour': 'red', 'size': 2})
+        message.append({'text': usercode, 'x': 0, 'y': 60, 'colour': 'red', 'size': 3})
         
         # Wait for the displaytask to complete 
         # Create a task to display the user code
