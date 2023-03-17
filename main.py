@@ -2,7 +2,7 @@ import board
 import digitalio
 import asyncio
 import neopixel
-import ledtest
+import ledcontroller
 import pixeltest
 import buttoncontroller
 import esp01s
@@ -11,8 +11,7 @@ import msonlinehandler
 import writeepd
 
 # Set up the onboard LED
-obled = digitalio.DigitalInOut(board.LED)
-obled.direction = digitalio.Direction.OUTPUT
+obled = ledcontroller.obled()
 
 # Set up the onboard neopixel
 obpixel = neopixel.NeoPixel(board.GP28, 1)
@@ -39,7 +38,7 @@ epd = writeepd.waveshare_eink()
 async def ledtesting():
     print("Testing onboard LED and onboard neopixel")
     # Create the testing tasks
-    obled_task = asyncio.create_task(ledtest.blinkonboardled(obled, 3))
+    obled_task = asyncio.create_task(obled.blinkonboardled(obled, 3))
     neopixel_task = asyncio.create_task(pixeltest.testsingleneopixel(obpixel))
     # Run the tasks
     await asyncio.gather(obled_task, neopixel_task)
@@ -83,7 +82,7 @@ async def main():
     # Get Azure AD token
     print("Getting Azure AD token...")
     aadtoken = msonlinehandler.aadtoken()
-    await aadtoken.gettoken(obwifi, epd)
+    await aadtoken.gettoken(obwifi, epd, obled, obpixel)
     
     
     print("Main program complete")

@@ -1,7 +1,6 @@
 from adafruit_datetime import datetime, timedelta
 from my_secrets import secrets
 import asyncio
-import writeepd
 import esp01s
 
 class aadtoken():
@@ -19,7 +18,7 @@ class aadtoken():
         self.scope = None
     
     # Define the class methods
-    async def gettoken(self, obwifi, epd):
+    async def gettoken(self, wifi, epd):
         # This function checks if the access token is less than 5 minutes old.
         # Check if the token is less than 5 minutes old
         if self.tokenexpiry != None and self.tokenexpiry > datetime.now() + timedelta(minutes = 5):
@@ -28,16 +27,16 @@ class aadtoken():
         # Check if token has expired
         elif self.tokenexpiry != None and self.tokenexpiry < datetime.now():
             # Token has expired, so get a new token
-            await self.getnewtokens(obwifi, epd)
+            await self.getnewtokens(wifi, epd)
         # Check for a valid refresh token
         elif self.refreshtoken == None:
             # No refresh token, start new token request
-            await self.getnewtokens(obwifi, epd)
+            await self.getnewtokens(wifi, epd)
         elif self.refreshtoken != None:
             # Refresh token exists, so use it to get a new token
-            await self.getnewtokenfromrefresh(obwifi, epd)
+            await self.getnewtokenfromrefresh(wifi, epd)
 
-    async def getnewtokens(self, obwifi, epd):
+    async def getnewtokens(self, wifi, epd, led, pixel):
         # This function gets a new AAD token from the Azure AD endpoint.
         # Create a task to clear the display
         # cleardisplay = asyncio.create_task(epd.epdclear())
@@ -50,10 +49,11 @@ class aadtoken():
             'client_id': secrets["clientid"],
             'scope': 'User.Read'
         }
-
+        # Flash the onboard LED to indicate the request is being sent
+        
         # Send the request
         print("Getting AAD token...")
-        response = await obwifi.placefullrequest(esp01s.requestcontent("POST", "https://login.microsoftonline.com/{}/oauth2/v2.0/devicecode".format(secrets["tenantid"]), headers=headers, data=data))
+        response = await wifi.placefullrequest(esp01s.requestcontent("POST", "https://login.microsoftonline.com/{}/oauth2/v2.0/devicecode".format(secrets["tenantid"]), headers=headers, data=data))
         print("Done")
         
         # Check the response
@@ -84,7 +84,8 @@ class aadtoken():
         
         # Wait for the displaytask to complete 
         # Create a task to display the user code
-        await epd.writetext(message)
+        displaytask = asyncio.create_task(epd.writetext(message))
+        asyncio.run(displaytask)
         
         # Start polling for the access token
         # Define the request parameters
@@ -102,7 +103,7 @@ class aadtoken():
         while True:
             print("Polling for AAD token...")
             # Send the request
-            response = await obwifi.placefullrequest(esp01s.requestcontent("POST", "https://login.microsoftonline.com/{}/oauth2/v2.0/token".format(secrets["tenantid"]), headers=headers, data=data, timeout=interval))
+            response = await wifi.placefullrequest(esp01s.requestcontent("POST", "https://login.microsoftonline.com/{}/oauth2/v2.0/token".format(secrets["tenantid"]), headers=headers, data=data, timeout=interval))
             print("Done")
             # Print the response
             print(response.json())
@@ -124,11 +125,18 @@ class aadtoken():
                 # There was an unexpected error, so raise an exception
                 raise Exception("Error getting AAD token. Status code: {}. Response: {}".format(response.status_code, response.text))
         
-        # Clear the display
-        # asyncio.create_task(epd.epdclear())
         # return response.json()['access_token'], response.json()['refresh_token'], response.json()['id_token'], response.json()['scope'], response.json()['expires_in']
         # self.refreshtoken = response.json()['refresh_token']
         # self.idtoken = response.json()['id_token']
         self.accesstoken = response.json()['access_token']
         self.scope = response.json()['scope']
         self.tokenexpiry = datetime.now() + timedelta(seconds = response.json()['expires_in'])
+        # Check if the displaytask is still running
+        while displaytask.done() == False:
+            # Display task is still running, wait for it to complete
+            asyncio.wait(0.1)
+        # Display task is complete, so clear the display
+        dislplaytask = asyncio.create_task(epd.epdclear())
+        asyncio.run(displaytask)
+        
+ 
