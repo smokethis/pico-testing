@@ -9,7 +9,7 @@ import esp01s
 from my_secrets import secrets
 import msonlinehandler
 import writeepd
-import datetime
+import adafruit_datetime as datetime
 
 # Set up the onboard LED
 obled = ledcontroller.obled()
