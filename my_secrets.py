@@ -8,5 +8,7 @@ secrets = {
     "clientid"                 : "my_clientid",
     "clientsecret"             : "my_clientsecret",
     "tenantid"                 : "my_tenantid",
-    "aad"                      : "my_aad_name"
+    "aad"                      : "my_aad_name",
+    "tzone"                    : "+0",
+    "ntp"                      : "pool.ntp.org"
 }

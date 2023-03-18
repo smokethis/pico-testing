@@ -46,7 +46,7 @@ class aadtoken():
         data = {
             'grant_type': 'device_code',
             'client_id': secrets["clientid"],
-            'scope': 'User.Read'
+            'scope': 'Calendars.Read'
         }
         # Flash the onboard LED to indicate the request is being sent
         # ledtask = asyncio.create_task(led.blinkonboardledforever(0.5))
@@ -131,6 +131,9 @@ class aadtoken():
         self.accesstoken = response.json()['access_token']
         self.scope = response.json()['scope']
         self.tokenexpiry = datetime.now() + timedelta(seconds = response.json()['expires_in'])
+        # Print response to console
+        print("Response:")
+        print(response.json())
         # await epd.epdclear()
     
     async def gettodayscalendar(self, wifi):

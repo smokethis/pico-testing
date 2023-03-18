@@ -89,6 +89,11 @@ async def main():
     print("Starting main program")
     print("Connecting to WiFi...")
     espwifi.esp.connect(secrets)
+    print("Setting NTP server...")
+    espwifi.esp.sntp_config(True, secrets['timezone'], secrets['ntp_server'])
+    # Get the time
+    time = espwifi.esp.sntp_time
+    print(time)
     # Get Azure AD token
     print("Getting Azure AD token...")
     msapi = msonlinehandler.aadtoken()
