@@ -51,11 +51,16 @@ class aadtoken():
             'scope': 'User.Read'
         }
         # Flash the onboard LED to indicate the request is being sent
-        ledtask = asyncio.create_task(led.blinkonboardledforever(0.5))
-        await ledtask
+        # ledtask = asyncio.create_task(led.blinkonboardledforever(0.5))
+        # await ledtask
         # Send the request
         print("Getting AAD token...")
-        response = await wifi.placefullrequest(esp01s.requestcontent("POST", "https://login.microsoftonline.com/{}/oauth2/v2.0/devicecode".format(secrets["tenantid"]), headers=headers, data=data))
+        # Try to send the request
+        try:
+            response = await wifi.placefullrequest(esp01s.requestcontent("POST", "https://login.microsoftonline.com/{}/oauth2/v2.0/devicecode".format(secrets["tenantid"]), headers=headers, data=data))
+        except Exception as e:
+            # There was an error, so raise an exception
+            raise Exception("Error getting AAD token. {}".format(e))
         print("Done")
         
         # Check the response
