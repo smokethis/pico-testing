@@ -30,7 +30,6 @@
 import time
 import busio
 import digitalio
-import displayio
 import board
 import adafruit_framebuf
 
@@ -89,6 +88,9 @@ class EPD_2in9_B:
         self.buffer_red = bytearray(self.height * self.width // 8)
         self.imageblack = adafruit_framebuf.FrameBuffer(self.buffer_black, self.width, self.height, adafruit_framebuf.MHMSB)
         self.imagered = adafruit_framebuf.FrameBuffer(self.buffer_red, self.width, self.height, adafruit_framebuf.MHMSB)
+        # Set the image rotation
+        self.imageblack._rotation = 1
+        self.imagered._rotation = 1
         self.init()
 
     def digital_read(self, pin):
