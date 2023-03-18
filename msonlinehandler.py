@@ -63,7 +63,7 @@ class aadtoken():
             # There was an error, so raise an exception
             raise Exception("Error getting AAD token. Status code: {}. Response: {}".format(response.status_code, response.text))
         
-        print(response.json())
+        # print(response.json())
         # Store response data
         usercode = response.json()['user_code']
         devicecode = response.json()['device_code']
@@ -110,8 +110,7 @@ class aadtoken():
             # Send the request
             response = await wifi.placefullrequest(esp01s.requestcontent("POST", "https://login.microsoftonline.com/{}/oauth2/v2.0/token".format(secrets["tenantid"]), headers=headers, data=data, timeout=interval))
             print("Done")
-            # Print the response
-            print(response.json())
+            
             # Check the response for expected errors
             if response.status_code == 400 and response.json()['error'] == 'authorization_pending':
                 # The token is not ready yet, so wait [interval] seconds and try again
@@ -141,7 +140,7 @@ class aadtoken():
             # Display task is still running, wait for it to complete
             asyncio.wait(0.1)
         # Display task is complete, so clear the display
-        dislplaytask = asyncio.create_task(epd.epdclear())
+        displaytask = asyncio.create_task(epd.epdclear())
         await displaytask
     
     async def gettodayscalendar(self, wifi):
