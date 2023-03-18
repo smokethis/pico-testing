@@ -88,11 +88,8 @@ class aadtoken():
         message.append({'text': 'and enter the code:', 'x': 0, 'y': 40, 'colour': 'black', 'size': 1})
         message.append({'text': usercode, 'x': 0, 'y': 60, 'colour': 'red', 'size': 3})
         
-        # Write the message to the console
-        print(message)
         # Create a task to display the user code
-        displaytask = asyncio.create_task(epd.writetext(message))
-        await dislplaytask
+        await epd.writetext(message)
         
         # Start polling for the access token
         # Define the request parameters
@@ -138,13 +135,7 @@ class aadtoken():
         self.accesstoken = response.json()['access_token']
         self.scope = response.json()['scope']
         self.tokenexpiry = datetime.now() + timedelta(seconds = response.json()['expires_in'])
-        # Check if the displaytask is still running
-        while displaytask.done() == False:
-            # Display task is still running, wait for it to complete
-            asyncio.wait(0.1)
-        # Display task is complete, so clear the display
-        dislplaytask = asyncio.create_task(epd.epdclear())
-        asyncio.run(displaytask)
+        await epd.epdclear()
     
     async def gettodayscalendar(self, wifi):
         # Use Microsoft Graph API to get today's calendar events for the user
