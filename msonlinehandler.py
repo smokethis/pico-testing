@@ -1,6 +1,5 @@
 from adafruit_datetime import datetime, timedelta
 from my_secrets import secrets
-import asyncio
 import esp01s
 import json
 
