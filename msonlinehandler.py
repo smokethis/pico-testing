@@ -52,15 +52,10 @@ class aadtoken():
         }
         # Flash the onboard LED to indicate the request is being sent
         # ledtask = asyncio.create_task(led.blinkonboardledforever(0.5))
-        # await ledtask
+        # asyncio.run(ledtask)
         # Send the request
         print("Getting AAD token...")
-        # Try to send the request
-        try:
-            response = await wifi.placefullrequest(esp01s.requestcontent("POST", "https://login.microsoftonline.com/{}/oauth2/v2.0/devicecode".format(secrets["tenantid"]), headers=headers, data=data))
-        except Exception as e:
-            # There was an error, so raise an exception
-            raise Exception("Error getting AAD token. {}".format(e))
+        response = await wifi.placefullrequest(esp01s.requestcontent("POST", "https://login.microsoftonline.com/{}/oauth2/v2.0/devicecode".format(secrets["tenantid"]), headers=headers, data=data))
         print("Done")
         
         # Check the response
@@ -68,7 +63,7 @@ class aadtoken():
             # There was an error, so raise an exception
             raise Exception("Error getting AAD token. Status code: {}. Response: {}".format(response.status_code, response.text))
         
-        # print(response.json())
+        print(response.json())
         # Store response data
         usercode = response.json()['user_code']
         devicecode = response.json()['device_code']
@@ -76,8 +71,8 @@ class aadtoken():
         interval = response.json()['interval']
         
         # Stop flashing the onboard LED
-        ledtask.cancel()
-        await ledtask
+        # ledtask.cancel()
+        # await ledtask
 
         # Construct the message to display
         message = []
@@ -93,9 +88,10 @@ class aadtoken():
         message.append({'text': 'and enter the code:', 'x': 0, 'y': 40, 'colour': 'black', 'size': 1})
         message.append({'text': usercode, 'x': 0, 'y': 60, 'colour': 'red', 'size': 3})
         
+        # Wait for the displaytask to complete 
         # Create a task to display the user code
-        displaytask = asyncio.create_task(epd.writetext(message))
-        await displaytask
+        # displaytask = asyncio.create_task(epd.writetext(message))
+        # asyncio.run(displaytask)
         
         # Start polling for the access token
         # Define the request parameters
@@ -115,7 +111,8 @@ class aadtoken():
             # Send the request
             response = await wifi.placefullrequest(esp01s.requestcontent("POST", "https://login.microsoftonline.com/{}/oauth2/v2.0/token".format(secrets["tenantid"]), headers=headers, data=data, timeout=interval))
             print("Done")
-            
+            # Print the response
+            print(response.json())
             # Check the response for expected errors
             if response.status_code == 400 and response.json()['error'] == 'authorization_pending':
                 # The token is not ready yet, so wait [interval] seconds and try again
@@ -145,8 +142,8 @@ class aadtoken():
             # Display task is still running, wait for it to complete
             asyncio.wait(0.1)
         # Display task is complete, so clear the display
-        displaytask = asyncio.create_task(epd.epdclear())
-        await displaytask
+        dislplaytask = asyncio.create_task(epd.epdclear())
+        asyncio.run(displaytask)
     
     async def gettodayscalendar(self, wifi):
         # Use Microsoft Graph API to get today's calendar events for the user
