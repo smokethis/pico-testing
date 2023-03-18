@@ -88,10 +88,11 @@ class aadtoken():
         message.append({'text': 'and enter the code:', 'x': 0, 'y': 40, 'colour': 'black', 'size': 1})
         message.append({'text': usercode, 'x': 0, 'y': 60, 'colour': 'red', 'size': 3})
         
-        # Wait for the displaytask to complete 
+        # Write the message to the console
+        print(message)
         # Create a task to display the user code
-        # displaytask = asyncio.create_task(epd.writetext(message))
-        # asyncio.run(displaytask)
+        displaytask = asyncio.create_task(epd.writetext(message))
+        await dislplaytask
         
         # Start polling for the access token
         # Define the request parameters
