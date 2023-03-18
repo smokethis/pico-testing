@@ -1,7 +1,6 @@
 from adafruit_datetime import datetime, timedelta
 from my_secrets import secrets
 import esp01s
-import json
 
 class aadtoken():
     # This class is used to get an AAD access token from the Azure AD endpoint using the device code grant.
@@ -108,8 +107,6 @@ class aadtoken():
             # Send the request
             response = await wifi.placefullrequest(esp01s.requestcontent("POST", "https://login.microsoftonline.com/{}/oauth2/v2.0/token".format(secrets["tenantid"]), headers=headers, data=data, timeout=interval))
             print("Done")
-            # Print the response
-            print(response.json())
             # Check the response for expected errors
             if response.status_code == 400 and response.json()['error'] == 'authorization_pending':
                 # The token is not ready yet, so wait [interval] seconds and try again
@@ -120,13 +117,13 @@ class aadtoken():
                 raise Exception("User declined the request")
             elif response.status_code != 200:
                 # There was an unexpected error, so raise an exception
-                raise Exception("Error getting AAD token. Status code: {}. Response: {}".format(response.status_code, response.text))
+                raise Exception("Error getting AAD token. Status code: {}. Response: {}".format(response.status_code, response.json()))
             elif response.status_code == 200:
                 # The token is ready, so break out of the loop
                 break
             else:
                 # There was an unexpected error, so raise an exception
-                raise Exception("Error getting AAD token. Status code: {}. Response: {}".format(response.status_code, response.text))
+                raise Exception("Error getting AAD token. Status code: {}. Response: {}".format(response.status_code, response.json(['error_description'])))
         
         # return response.json()['access_token'], response.json()['refresh_token'], response.json()['id_token'], response.json()['scope'], response.json()['expires_in']
         # self.refreshtoken = response.json()['refresh_token']
@@ -134,7 +131,7 @@ class aadtoken():
         self.accesstoken = response.json()['access_token']
         self.scope = response.json()['scope']
         self.tokenexpiry = datetime.now() + timedelta(seconds = response.json()['expires_in'])
-        await epd.epdclear()
+        # await epd.epdclear()
     
     async def gettodayscalendar(self, wifi):
         # Use Microsoft Graph API to get today's calendar events for the user
@@ -143,12 +140,17 @@ class aadtoken():
             'Authorization': 'Bearer {}'.format(self.accesstoken),
             'Content-Type': 'application/json'
         }
-        query = "id,subject,start,end"
+        # Define the time parameters
+        today = datetime.now()
+        startdatetime = today.replace(hour=0, minute=0, second=0, microsecond=0)
+        enddatetime = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+        # Define the select parameters
+        select = "id,subject,start,end"
         # Send the request
-        response = await wifi.placefullrequest(esp01s.requestcontent("GET", "https://graph.microsoft.com/v1.0/me/calendarview?startdatetime={}&enddatetime={}&$select={}".format(datetime.now().strftime("%Y-%m-%dT00:00:00"), datetime.now().strftime("%Y-%m-%dT23:59:59"), query), headers=headers))
+        response = await wifi.placefullrequest(esp01s.requestcontent("GET", "https://graph.microsoft.com/v1.0/me/calendarview?startdatetime={}&enddatetime={}&$select={}".format(startdatetime, enddatetime, select), headers=headers))
         # Check the response
         if response.status_code != 200:
             # There was an error, so raise an exception
-            raise Exception("Error getting calendar events. Status code: {}. Response: {}".format(response.status_code, response.text))
+            raise Exception("Error getting calendar events. Status code: {}. Response: {}".format(response.status_code, response.json()))
         # Return the response
-        return json.loads(response.text)
+        return response.json()
