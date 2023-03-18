@@ -8,7 +8,8 @@ class obled():
         self.obled = digitalio.DigitalInOut(board.LED)
         self.obled.direction = digitalio.Direction.OUTPUT
 
-    async def blinkonboardled(ledobject, count, rate=1):
+
+    async def blinkonboardled(self, count, rate=1):
         """
         Blink the onboard LED.
         Parameters:
@@ -17,12 +18,12 @@ class obled():
             rate (float): The rate at which to blink the LED
         """
         for i in range(count):
-            ledobject.value = True
+            self.value = True
             await asyncio.sleep(rate)
-            ledobject.value = False
+            self.value = False
             await asyncio.sleep(rate)
 
-    async def blinkonboardledforever(ledobject, rate=0.5):
+    async def blinkonboardledforever(self, rate=0.5):
         """
         Blink the onboard LED forever.
         Parameters:
@@ -31,9 +32,9 @@ class obled():
         """
         # Wait for the task to be cancelled
         while asyncio.CancelledError is False:
-            ledobject.value = True
+            self.value = True
             await asyncio.sleep(rate)
-            ledobject.value = False
+            self.value = False
             await asyncio.sleep(rate)
         # Turn the LED off when the task is cancelled
-        ledobject.value = False
+        self.value = False
