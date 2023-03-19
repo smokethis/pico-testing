@@ -10,6 +10,7 @@ from my_secrets import secrets
 import msonlinehandler
 import writeepd
 import adafruit_datetime as datetime
+import timehandler
 
 # Set up the onboard LED
 obled = ledcontroller.obled()
@@ -60,8 +61,6 @@ async def wifitesting():
         print("Response failed")
         print("Status code: {}".format(response.status_code))
 
-
-
 # Define the testing function
 async def testing():
     # Await the testing function
@@ -78,37 +77,53 @@ async def testing():
 # Get next event in a list
 async def get_next_event(events):
     now = datetime.datetime.now()
-    future_events = [event for event in events if event['start'] > now]
-    if not future_events:
-        return None
-    next_event = min(future_events, key=lambda event: event['start'])
-    return next_event
+    for event in events:
+        # Convert the start time to datetime object from ISO format
+        es = datetime.datetime.fromisoformat(event["start"])
+        if es > now:
+            return event
 
 # Define the main function
 async def main():
     print("Starting main program")
     print("Connecting to WiFi...")
     espwifi.esp.connect(secrets)
-    print("Setting NTP server...")
-    espwifi.esp.sntp_config(True, secrets['timezone'], secrets['ntp_server'])
-    # Get the time
-    time = espwifi.esp.sntp_time
-    print(time)
+
+    # Set the RTC
+    print("Setting RTC...")
+    await timehandler.set_rtc_time(espwifi, secrets)
+
     # Get Azure AD token
     print("Getting Azure AD token...")
     msapi = msonlinehandler.aadtoken()
     await msapi.gettoken(espwifi, epd, obled, obpixel)
+
     # Get today's calendar
-    today = await msapi.gettodayscalendar(espwifi)
+    cal_today = await msapi.gettodayscalendar(espwifi)
+
     # Write the calendar to the console
     print("Today's calendar:")
-    print(today)
-    input("Press enter to continue...")
+    print(cal_today)
+
     # Get the next event
-    nextevent = await get_next_event(today)
+    nextevent = await get_next_event(cal_today)
     print("Next event:")
     print(nextevent)
-    input("Press enter to continue...")
+    # Construct the message to display
+    message = []
+    # Message must be in dictionary format with the following keys:
+    # text - The text to display
+    # x - The x position of the text
+    # y - The y position of the text
+    # colour - The colour of the text (black or red)
+    # size - The size of the text (1 = 8px, 2 = 16px, 3 = 24px etc)
+    # The message must be a list of dictionaries
+    message.append({"text": nextevent["subject"], "x": 0, "y": 0, "colour": "red", "size": 2})
+    # Create a line which has both the start and end times
+    message.append({"text": nextevent["start"].strftime("%H:%M") + " - " + nextevent["end"].strftime("%H:%M"), "x": 0, "y": 36, "colour": "black", "size": 2})
+    # Write the message to the display
+    await epd.writetodisplay(message)
+    
     # Fetch the next calendar event
     # nextevent = today
     # await epd.writetodisplay(today)

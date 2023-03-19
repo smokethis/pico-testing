@@ -1,6 +1,7 @@
 from adafruit_datetime import datetime, timedelta
 from my_secrets import secrets
 import esp01s
+import json
 
 class aadtoken():
     # This class is used to get an AAD access token from the Azure AD endpoint using the device code grant.
@@ -155,5 +156,15 @@ class aadtoken():
         if response.status_code != 200:
             # There was an error, so raise an exception
             raise Exception("Error getting calendar events. Status code: {}. Response: {}".format(response.status_code, response.json()))
-        # Return the response
-        return response.json()
+        # Place the response into a json object
+        responsejson = json.loads(response.text)
+        events = []
+        # Loop through the events
+        for event in responsejson['value']:
+            # Add the event to the list
+            events.append({'subject': event['subject'], 'start': event['start']['dateTime'], 'end': event['end']['dateTime']})
+        # Sort the events by start time
+        events.sort(key=lambda x: x['start'])
+        # Return the events
+        return events
+        
