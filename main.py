@@ -46,16 +46,20 @@ async def main():
     await msapi.gettoken()
 
     # Get today's calendar
+    # If calendar is empty, it will return an empty list
+    print("Getting today's calendar...")
     cal_today = await msapi.gettodayscalendar()
+    if cal_today != None:
+        print("Today's Calendar")
+        print(cal_today)
+        # Get the next event
+        nextevent = await get_next_event(cal_today)
+        print("Next event:")
+        print(nextevent)
+    else:
+        print("No events today")
+        return
 
-    # Write the calendar to the console
-    print("Today's calendar:")
-    print(cal_today)
-
-    # Get the next event
-    nextevent = await get_next_event(cal_today)
-    print("Next event:")
-    print(nextevent)
     # Construct the message to display
     message = []
     # Message must be in dictionary format with the following keys:
@@ -65,9 +69,15 @@ async def main():
     # colour - The colour of the text (black or red)
     # size - The size of the text (1 = 8px, 2 = 16px, 3 = 24px etc)
     # The message must be a list of dictionaries
-    message.append({"text": nextevent["subject"], "x": 0, "y": 0, "colour": "red", "size": 2})
-    # Create a line which has both the start and end times
-    message.append({"text": nextevent["start"].strftime("%H:%M") + " - " + nextevent["end"].strftime("%H:%M"), "x": 0, "y": 36, "colour": "black", "size": 2})
+    # If there is a nextevent object, display it
+    if nextevent != None:
+        # Create a line which has the subject
+        message.append({"text": nextevent["subject"], "x": 0, "y": 0, "colour": "red", "size": 2})
+        # Create a line which has both the start and end times
+        message.append({"text": nextevent["start"].strftime("%H:%M") + " - " + nextevent["end"].strftime("%H:%M"), "x": 0, "y": 36, "colour": "black", "size": 2})
+    else:
+        # Write a message to say there are no more events today
+        message.append({"text": "No more events today", "x": 0, "y": 0, "colour": "red", "size": 2})
     # Write the message to the display
     await hardware.epd.writetodisplay(message)
     

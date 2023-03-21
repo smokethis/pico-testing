@@ -1,5 +1,6 @@
 from adafruit_datetime import datetime, timedelta
 from my_secrets import secrets
+import os
 import esp01s
 import json
 import hardware
@@ -133,10 +134,17 @@ class aadtoken():
         self.accesstoken = response.json()['access_token']
         self.scope = response.json()['scope']
         self.tokenexpiry = datetime.now() + timedelta(seconds = response.json()['expires_in'])
+        # Also save these variables to a tokens file
+        with open('/tokens.json', 'w') as f:
+            json.dump({
+                'accesstoken': self.accesstoken,
+                'scope': self.scope,
+                'tokenexpiry': self.tokenexpiry.strftime("%Y-%m-%d %H:%M:%S")
+            }, f)
         # Token received
         print("AAD token received")
         # print(response.json())
-        # await epd.epdclear()
+        # await epd.epdclear()  
     
     async def gettodayscalendar(self):
         # Use Microsoft Graph API to get today's calendar events for the user
