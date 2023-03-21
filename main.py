@@ -1,7 +1,6 @@
 import asyncio
 import ledcontroller
 import buttoncontroller
-import esp01s
 from my_secrets import secrets
 import msonlinehandler
 import adafruit_datetime as datetime
@@ -19,7 +18,7 @@ async def testing():
     except Exception as e:
         print("Error: {}".format(e))
     # Do wifitesting function
-    await esp01s.wifitesting()
+    await hardware.esp01s.wifitesting()
 
 # Get next event in a list
 async def get_next_event(events):
