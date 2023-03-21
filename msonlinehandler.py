@@ -133,9 +133,9 @@ class aadtoken():
         self.accesstoken = response.json()['access_token']
         self.scope = response.json()['scope']
         self.tokenexpiry = datetime.now() + timedelta(seconds = response.json()['expires_in'])
-        # Print response to console
-        print("Response:")
-        print(response.json())
+        # Token received
+        print("AAD token received")
+        # print(response.json())
         # await epd.epdclear()
     
     async def gettodayscalendar(self):
