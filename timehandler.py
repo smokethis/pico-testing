@@ -1,15 +1,17 @@
-async def set_rtc_time(espwifi, secrets):
+import hardware
+
+async def set_rtc_time(secrets):
     
     import rtc
     import time
     import asyncio
     print("Setting NTP server...")
-    espwifi.esp.sntp_config(True, secrets['timezone'], secrets['ntp_server'])
+    hardware.espwifi.esp.sntp_config(True, secrets['timezone'], secrets['ntp_server'])
     # Get the time, check the year, if it is 1970 then retry every 10 seconds
-    t = espwifi.esp.sntp_time
+    t = hardware.espwifi.esp.sntp_time
     while '1970' in t:
         print("Time not set, retrying...")
-        t = espwifi.esp.sntp_time
+        t = hardware.espwifi.esp.sntp_time
         # print(time)
         await asyncio.sleep(10)
     # Convert the time to a string

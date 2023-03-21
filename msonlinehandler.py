@@ -2,6 +2,7 @@ from adafruit_datetime import datetime, timedelta
 from my_secrets import secrets
 import esp01s
 import json
+import hardware
 
 class aadtoken():
     # This class is used to get an AAD access token from the Azure AD endpoint using the device code grant.
@@ -18,7 +19,7 @@ class aadtoken():
         self.scope = None
     
     # Define the class methods
-    async def gettoken(self, wifi, epd, led, pixel):
+    async def gettoken(self):
         # This function checks if the access token is less than 5 minutes old.
         # Check if the token is less than 5 minutes old
         if self.tokenexpiry != None and self.tokenexpiry > datetime.now() + timedelta(minutes = 5):
@@ -27,16 +28,16 @@ class aadtoken():
         # Check if token has expired
         elif self.tokenexpiry != None and self.tokenexpiry < datetime.now():
             # Token has expired, so get a new token
-            await self.getnewtokens(wifi, epd, led, pixel)
+            await self.getnewtokens()
         # Check for a valid refresh token
         elif self.refreshtoken == None:
             # No refresh token, start new token request
-            await self.getnewtokens(wifi, epd, led, pixel)
+            await self.getnewtokens()
         elif self.refreshtoken != None:
             # Refresh token exists, so use it to get a new token
-            await self.getnewtokenfromrefresh(wifi, epd)
+            await self.getnewtokenfromrefresh()
 
-    async def getnewtokens(self, wifi, epd, led, pixel):
+    async def getnewtokens(self):
         # This function gets a new AAD token from the Azure AD endpoint.
         # Create a task to clear the display
         # cleardisplay = asyncio.create_task(epd.epdclear())
@@ -54,7 +55,7 @@ class aadtoken():
         # asyncio.run(ledtask)
         # Send the request
         print("Getting AAD token...")
-        response = await wifi.placefullrequest(esp01s.requestcontent("POST", "https://login.microsoftonline.com/{}/oauth2/v2.0/devicecode".format(secrets["tenantid"]), headers=headers, data=data))
+        response = await hardware.esp01s.placefullrequest(esp01s.requestcontent("POST", "https://login.microsoftonline.com/{}/oauth2/v2.0/devicecode".format(secrets["tenantid"]), headers=headers, data=data))
         print("Done")
         
         # Check the response
@@ -88,7 +89,7 @@ class aadtoken():
         message.append({'text': usercode, 'x': 0, 'y': 60, 'colour': 'red', 'size': 3})
         
         # Create a task to display the user code
-        await epd.writetext(message)
+        await hardware.epd.writetext(message)
         
         # Start polling for the access token
         # Define the request parameters
@@ -106,7 +107,7 @@ class aadtoken():
         while True:
             print("Polling for AAD token...")
             # Send the request
-            response = await wifi.placefullrequest(esp01s.requestcontent("POST", "https://login.microsoftonline.com/{}/oauth2/v2.0/token".format(secrets["tenantid"]), headers=headers, data=data, timeout=interval))
+            response = await hardware.esp01s.placefullrequest(esp01s.requestcontent("POST", "https://login.microsoftonline.com/{}/oauth2/v2.0/token".format(secrets["tenantid"]), headers=headers, data=data, timeout=interval))
             print("Done")
             # Check the response for expected errors
             if response.status_code == 400 and response.json()['error'] == 'authorization_pending':
@@ -137,7 +138,7 @@ class aadtoken():
         print(response.json())
         # await epd.epdclear()
     
-    async def gettodayscalendar(self, wifi):
+    async def gettodayscalendar(self):
         # Use Microsoft Graph API to get today's calendar events for the user
         # Define the request parameters
         headers = {
@@ -151,7 +152,7 @@ class aadtoken():
         # Define the select parameters
         select = "id,subject,start,end"
         # Send the request
-        response = await wifi.placefullrequest(esp01s.requestcontent("GET", "https://graph.microsoft.com/v1.0/me/calendarview?startdatetime={}&enddatetime={}&$select={}".format(startdatetime, enddatetime, select), headers=headers))
+        response = await hardware.esp01s.placefullrequest(esp01s.requestcontent("GET", "https://graph.microsoft.com/v1.0/me/calendarview?startdatetime={}&enddatetime={}&$select={}".format(startdatetime, enddatetime, select), headers=headers))
         # Check the response
         if response.status_code != 200:
             # There was an error, so raise an exception
