@@ -12,30 +12,7 @@ import writeepd
 import adafruit_datetime as datetime
 import timehandler
 
-# Set up the onboard LED
-obled = ledcontroller.obled()
 
-# Set up the onboard neopixel
-obpixel = neopixel.NeoPixel(board.GP28, 1)
-
-# Set up the Maker Pi Pico buttons
-button1 = digitalio.DigitalInOut(board.GP20)
-button1.direction = digitalio.Direction.INPUT
-button1.pull = digitalio.Pull.UP
-
-button2 = digitalio.DigitalInOut(board.GP21)
-button2.direction = digitalio.Direction.INPUT
-button2.pull = digitalio.Pull.UP
-
-button3 = digitalio.DigitalInOut(board.GP22)
-button3.direction = digitalio.Direction.INPUT
-button3.pull = digitalio.Pull.UP
-
-# Create the ESP01S object
-espwifi = esp01s.esp01()
-
-# Create Waveshare eink display
-epd = writeepd.waveshare_eink()
 
 async def ledtesting():
     print("Testing onboard LED and onboard neopixel")
@@ -86,6 +63,34 @@ async def get_next_event(events):
 # Define the main function
 async def main():
     print("Starting main program")
+
+    print("Setting up devices...")
+
+    # Set up the onboard LED
+    obled = ledcontroller.obled()
+
+    # Set up the onboard neopixel
+    obpixel = neopixel.NeoPixel(board.GP28, 1)
+
+    # Set up the Maker Pi Pico buttons
+    button1 = digitalio.DigitalInOut(board.GP20)
+    button1.direction = digitalio.Direction.INPUT
+    button1.pull = digitalio.Pull.UP
+
+    button2 = digitalio.DigitalInOut(board.GP21)
+    button2.direction = digitalio.Direction.INPUT
+    button2.pull = digitalio.Pull.UP
+
+    button3 = digitalio.DigitalInOut(board.GP22)
+    button3.direction = digitalio.Direction.INPUT
+    button3.pull = digitalio.Pull.UP
+
+    # Create the ESP01S object
+    espwifi = esp01s.esp01()
+
+    # Create Waveshare eink display
+    epd = writeepd.waveshare_eink()
+    
     print("Connecting to WiFi...")
     espwifi.esp.connect(secrets)
 
