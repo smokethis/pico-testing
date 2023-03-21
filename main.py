@@ -1,55 +1,25 @@
-import board
-import digitalio
 import asyncio
-import neopixel
 import ledcontroller
-import pixeltest
 import buttoncontroller
 import esp01s
 from my_secrets import secrets
 import msonlinehandler
-import writeepd
 import adafruit_datetime as datetime
 import timehandler
-
-
-
-async def ledtesting():
-    print("Testing onboard LED and onboard neopixel")
-    # Create the testing tasks
-    obled_task = asyncio.create_task(obled.blinkonboardled(obled, 3))
-    neopixel_task = asyncio.create_task(pixeltest.testsingleneopixel(obpixel))
-    # Run the tasks
-    await asyncio.gather(obled_task, neopixel_task)
-    print("Testing complete")
-
-async def wifitesting():
-    # Testing WiFi connection and pin
-    print("Testing WiFi connection...")
-    await espwifi.wifipingtest("8.8.8.8")
-    # Testing GET request
-    print("Testing GET request...")
-    # Check for a response from HTTPBin and print the body if it's OK
-    response = await espwifi.getrequest("https://httpbin.org/anything")
-    if response.status_code == 200:
-        print("Response OK")
-        print("Body: {}".format(response.text))
-    else:
-        print("Response failed")
-        print("Status code: {}".format(response.status_code))
+import hardware
 
 # Define the testing function
 async def testing():
-    # Await the testing function
-    await ledtesting()
-    # Await the buttontest function
+    # Test the onboard LED
+    await ledcontroller.blinkonboardled(3)
+    # Test onboard buttons
     try:
-        response = await buttoncontroller.monitorbuttons(button1, button2, button3)
+        response = await buttoncontroller.monitorbuttons(hardware.button1, hardware.button2, hardware.button3)
         print("Button {} was pressed".format(response))
     except Exception as e:
         print("Error: {}".format(e))
-    # Await the wifitesting function
-    await wifitesting()
+    # Do wifitesting function
+    await esp01s.wifitesting()
 
 # Get next event in a list
 async def get_next_event(events):
@@ -63,48 +33,21 @@ async def get_next_event(events):
 # Define the main function
 async def main():
     print("Starting main program")
-
-    print("Setting up devices...")
-
-    # Set up the onboard LED
-    obled = ledcontroller.obled()
-
-    # Set up the onboard neopixel
-    obpixel = neopixel.NeoPixel(board.GP28, 1)
-
-    # Set up the Maker Pi Pico buttons
-    button1 = digitalio.DigitalInOut(board.GP20)
-    button1.direction = digitalio.Direction.INPUT
-    button1.pull = digitalio.Pull.UP
-
-    button2 = digitalio.DigitalInOut(board.GP21)
-    button2.direction = digitalio.Direction.INPUT
-    button2.pull = digitalio.Pull.UP
-
-    button3 = digitalio.DigitalInOut(board.GP22)
-    button3.direction = digitalio.Direction.INPUT
-    button3.pull = digitalio.Pull.UP
-
-    # Create the ESP01S object
-    espwifi = esp01s.esp01()
-
-    # Create Waveshare eink display
-    epd = writeepd.waveshare_eink()
     
     print("Connecting to WiFi...")
-    espwifi.esp.connect(secrets)
+    hardware.espwifi.esp.connect(secrets)
 
     # Set the RTC
     print("Setting RTC...")
-    await timehandler.set_rtc_time(espwifi, secrets)
+    await timehandler.set_rtc_time(secrets)
 
     # Get Azure AD token
     print("Getting Azure AD token...")
     msapi = msonlinehandler.aadtoken()
-    await msapi.gettoken(espwifi, epd, obled, obpixel)
+    await msapi.gettoken()
 
     # Get today's calendar
-    cal_today = await msapi.gettodayscalendar(espwifi)
+    cal_today = await msapi.gettodayscalendar()
 
     # Write the calendar to the console
     print("Today's calendar:")
@@ -127,7 +70,7 @@ async def main():
     # Create a line which has both the start and end times
     message.append({"text": nextevent["start"].strftime("%H:%M") + " - " + nextevent["end"].strftime("%H:%M"), "x": 0, "y": 36, "colour": "black", "size": 2})
     # Write the message to the display
-    await epd.writetodisplay(message)
+    await hardware.epd.writetodisplay(message)
     
     # Fetch the next calendar event
     # nextevent = today
