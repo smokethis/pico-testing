@@ -55,7 +55,7 @@ class aadtoken():
         # asyncio.run(ledtask)
         # Send the request
         print("Getting AAD token...")
-        response = await hardware.esp01s.placefullrequest(esp01s.requestcontent("POST", "https://login.microsoftonline.com/{}/oauth2/v2.0/devicecode".format(secrets["tenantid"]), headers=headers, data=data))
+        response = await hardware.espwifi.placefullrequest(esp01s.requestcontent("POST", "https://login.microsoftonline.com/{}/oauth2/v2.0/devicecode".format(secrets["tenantid"]), headers=headers, data=data))
         print("Done")
         
         # Check the response
@@ -107,7 +107,7 @@ class aadtoken():
         while True:
             print("Polling for AAD token...")
             # Send the request
-            response = await hardware.esp01s.placefullrequest(esp01s.requestcontent("POST", "https://login.microsoftonline.com/{}/oauth2/v2.0/token".format(secrets["tenantid"]), headers=headers, data=data, timeout=interval))
+            response = await hardware.espwifi.placefullrequest(esp01s.requestcontent("POST", "https://login.microsoftonline.com/{}/oauth2/v2.0/token".format(secrets["tenantid"]), headers=headers, data=data, timeout=interval))
             print("Done")
             # Check the response for expected errors
             if response.status_code == 400 and response.json()['error'] == 'authorization_pending':
@@ -152,7 +152,7 @@ class aadtoken():
         # Define the select parameters
         select = "id,subject,start,end"
         # Send the request
-        response = await hardware.esp01s.placefullrequest(esp01s.requestcontent("GET", "https://graph.microsoft.com/v1.0/me/calendarview?startdatetime={}&enddatetime={}&$select={}".format(startdatetime, enddatetime, select), headers=headers))
+        response = await hardware.espwifi.placefullrequest(esp01s.requestcontent("GET", "https://graph.microsoft.com/v1.0/me/calendarview?startdatetime={}&enddatetime={}&$select={}".format(startdatetime, enddatetime, select), headers=headers))
         # Check the response
         if response.status_code != 200:
             # There was an error, so raise an exception
