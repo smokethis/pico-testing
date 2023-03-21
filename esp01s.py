@@ -168,4 +168,19 @@ class esp01:
                 print("Sent OK")
                 return r
         except (ValueError, RuntimeError, adafruit_espatcontrol.OKError) as e:
-            print("Failed, \n", e)  
+            print("Failed, \n", e)
+
+    async def wifitesting(self):
+        # Testing WiFi connection and pin
+        print("Testing WiFi connection...")
+        await self.wifipingtest("8.8.8.8")
+        # Testing GET request
+        print("Testing GET request...")
+        # Check for a response from HTTPBin and print the body if it's OK
+        response = await self.getrequest("https://httpbin.org/anything")
+        if response.status_code == 200:
+            print("Response OK")
+            print("Body: {}".format(response.text))
+        else:
+            print("Response failed")
+            print("Status code: {}".format(response.status_code))

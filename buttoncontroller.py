@@ -1,6 +1,7 @@
 import asyncio
+import hardware
 
-async def monitorbuttons(button1, button2, button3):
+async def monitorbuttons():
     """
     This function monitors the three Maker Pi Pico buttons.
     When a button is pressed, it returns the pressed button number as a string.
@@ -12,10 +13,10 @@ async def monitorbuttons(button1, button2, button3):
     """
     print("Waiting for button press")
     while True:
-        if not button1.value:
+        if not hardware.button1.value:
             return "1"
-        if not button2.value:
+        if not hardware.button2.value:
             return "2"
-        if not button3.value:
+        if not hardware.button3.value:
             return "3"
         await asyncio.sleep(0.1)

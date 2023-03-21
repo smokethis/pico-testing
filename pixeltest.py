@@ -1,7 +1,8 @@
 import asyncio
 from adafruit_led_animation.animation.pulse import Pulse
+import hardware
 
-async def testsingleneopixel(pixelobj, brightness=0.2):
+async def testsingleneopixel(brightness=0.2):
     """
     Test a single neopixel.
     Cycles through red, green, blue and off.
@@ -11,18 +12,18 @@ async def testsingleneopixel(pixelobj, brightness=0.2):
     """
     print("Testing single neopixel")
     # Set the brightness
-    pixelobj.brightness = brightness
+    hardware.obpixel.brightness = brightness
     # Test the onboard neopixel
-    pixelobj[0] = (255, 0, 0)
+    hardware.obpixel[0] = (255, 0, 0)
     await asyncio.sleep(1)
-    pixelobj[0] = (0, 255, 0)
+    hardware.obpixel[0] = (0, 255, 0)
     await asyncio.sleep(1)
-    pixelobj[0] = (0, 0, 255)
+    hardware.obpixel[0] = (0, 0, 255)
     await asyncio.sleep(1)
-    pixelobj[0] = (0, 0, 0)
+    hardware.obpixel[0] = (0, 0, 0)
     print("Single neopixel testing complete")
 
-async def pulseneopixel(pixelobj, brightness=0.2):
+async def pulseneopixel(brightness=0.2):
     """
     Test neopixel object with a pulse animation.
     Parameters:
@@ -31,8 +32,8 @@ async def pulseneopixel(pixelobj, brightness=0.2):
     """
     print("Testing neopixel pulse")
     # Set the brightness
-    pixelobj.brightness = brightness
-    pulse = Pulse(pixelobj, speed=0.5, period=5, color=(255, 0, 0))
+    hardware.obpixel.brightness = brightness
+    pulse = Pulse(hardware.obpixel, speed=0.5, period=5, color=(255, 0, 0))
     pulse.animate()
     await asyncio.sleep(5)
     print("Neopixel pulse testing complete")

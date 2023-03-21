@@ -8,7 +8,6 @@ class obled():
         self.obled = digitalio.DigitalInOut(board.LED)
         self.obled.direction = digitalio.Direction.OUTPUT
 
-
     async def blinkonboardled(self, count, rate=1):
         """
         Blink the onboard LED.
