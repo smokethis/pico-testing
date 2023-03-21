@@ -79,7 +79,7 @@ async def main():
         # Write a message to say there are no more events today
         message.append({"text": "No more events today", "x": 0, "y": 0, "colour": "red", "size": 2})
     # Write the message to the display
-    await hardware.epd.writetodisplay(message)
+    await hardware.epd.writetext(message)
     
     # Fetch the next calendar event
     # nextevent = today
