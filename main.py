@@ -4,6 +4,7 @@ import buttoncontroller
 from my_secrets import secrets
 import msonlinehandler
 import adafruit_datetime as datetime
+import pixelcontroller
 import timehandler
 import hardware
 
@@ -104,6 +105,10 @@ async def main():
 
     print("Main program complete")
 
+async def pixeltesting():
+    pixelcontroller.testpixelring()
+
+
 ############################
 ### --- Main program --- ###
 ############################
@@ -116,7 +121,7 @@ if runtest == True:
     asyncio.run(testing())
 
 # Run the main function
-asyncio.run(main())
+asyncio.run(pixeltesting())
 
 ##############################
 ### --- End of program --- ###

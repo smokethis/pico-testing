@@ -58,5 +58,3 @@ async def testpixelring(brightness=0.2):
     await asyncio.sleep(1)
     hardware.pixelring.fill((0, 0, 0))
     print("Neopixel ring testing complete")
-
-testpixelring()
