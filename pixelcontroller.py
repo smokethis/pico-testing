@@ -37,3 +37,26 @@ async def pulseneopixel(brightness=0.2):
     pulse.animate()
     await asyncio.sleep(5)
     print("Neopixel pulse testing complete")
+
+async def testpixelring(brightness=0.2):
+    """
+    Test a neopixel ring.
+    Cycles through red, green, blue and off.
+    Parameters:
+        pixelobj (neopixel.NeoPixel): The neopixel object to test
+        brightness (float): The brightness to set the neopixel (default 0.2)
+    """
+    print("Testing neopixel ring")
+    # Set the brightness
+    hardware.pixelring.brightness = brightness
+    # Test the neopixel ring
+    hardware.pixelring.fill((255, 0, 0))
+    await asyncio.sleep(1)
+    hardware.pixelring.fill((0, 255, 0))
+    await asyncio.sleep(1)
+    hardware.pixelring.fill((0, 0, 255))
+    await asyncio.sleep(1)
+    hardware.pixelring.fill((0, 0, 0))
+    print("Neopixel ring testing complete")
+
+testpixelring()

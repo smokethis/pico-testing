@@ -29,3 +29,6 @@ espwifi = esp01s.esp01()
 
 # Create Waveshare eink display
 epd = writeepd.waveshare_eink()
+
+# Set up the neopixel ring
+pixelring = neopixel.NeoPixel(board.GP1, 16)
