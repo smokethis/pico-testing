@@ -31,4 +31,4 @@ espwifi = esp01s.esp01()
 epd = writeepd.waveshare_eink()
 
 # Set up the neopixel ring
-pixelring = neopixel.NeoPixel(board.GP1, 16, bpp=4)
+pixelring = neopixel.NeoPixel(board.GP1, 16, bpp=4, brightness=0.2)
