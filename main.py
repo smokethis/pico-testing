@@ -106,7 +106,7 @@ async def main():
     print("Main program complete")
 
 async def pixeltesting():
-    pixelcontroller.testpixelring()
+    await pixelcontroller.testpixelring()
 
 
 ############################
