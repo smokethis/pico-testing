@@ -5,10 +5,13 @@ from my_secrets import secrets
 import msonlinehandler
 import adafruit_datetime as datetime
 import pixelcontroller
+import calendarhandler
 import timehandler
 import hardware
+import utils
 from adafruit_led_animation import color
 import time
+import writeepd
 
 today = datetime.date.today()
 
@@ -45,8 +48,6 @@ sample_events = [
     }
 ]
 
-
-# Define the testing function
 async def testing():
     # Test the onboard LED
     await ledcontroller.blinkonboardled(3)
@@ -61,43 +62,6 @@ async def testing():
     # Test the neopixel ring
     await pixelcontroller.testpixelring()
 
-# Get next event in a list
-async def get_next_event(events):
-    now = datetime.datetime.now()
-    for event in events:
-        # Convert the start time to datetime object from ISO format
-        es = datetime.datetime.fromisoformat(event["start"])
-        if es > now:
-            return event
-
-async def eventprocessing(cal_today):
-        
-        # Get the next event
-        nextevent = await get_next_event(cal_today)
-        print("Next event:")
-        print(nextevent)
-
-        # Construct the message to display
-        message = []
-        # Message must be in dictionary format with the following keys:
-        # text - The text to display
-        # x - The x position of the text
-        # y - The y position of the text
-        # colour - The colour of the text (black or red)
-        # size - The size of the text (1 = 8px, 2 = 16px, 3 = 24px etc)
-        # The message must be a list of dictionaries
-        # If there is a nextevent object, display it
-        if nextevent != None:
-            # Create a line which has the subject
-            message.append({"text": nextevent["subject"], "x": 0, "y": 0, "colour": "red", "size": 2})
-            # Create a line which has both the start and end times
-            message.append({"text": nextevent["start"].strftime("%H:%M") + " - " + nextevent["end"].strftime("%H:%M"), "x": 0, "y": 36, "colour": "black", "size": 2})
-        else:
-            # Write a message to say there are no more events today
-            message.append({"text": "No more events today", "x": 0, "y": 0, "colour": "red", "size": 2})
-        # Write the message to the display
-        await hardware.epd.writetext(message)
-
 async def flashcurrentperiod(period, basecolour, interval=5):
     """ Flashes the specified pixel white.
     Flashes the specified period white and back again every [interval] seconds, default of 5.
@@ -108,11 +72,85 @@ async def flashcurrentperiod(period, basecolour, interval=5):
     Returns:
         None
     """
-    await pixelcontroller.pulsepixel(period, basecolour)
-    await asyncio.sleep(interval)
+    while True:
+        await pixelcontroller.pulsepixel(period, basecolour)
+        await asyncio.sleep(interval)
 
-# Define the main function
+async def getcurrentperiod():
+    """ Gets the current period.
+    Gets the current period based on the time of day. 
+    Returns None if the current period is not during the working day (0800-1700 with 1200-1300 empty).
+    Returns:
+        int: The current period.
+    """
+    # Is it the morning or the afternoon?
+    if utils.get_current_time() < datetime.time(12, 0):
+        # It's the morning, so subtract 8 from the hour
+        # Calculate which 15 minute period it is
+        # Get the current time
+        now = utils.get_current_time()
+        # Get the current hour
+        hour = now.hour - 8
+        # Get the current minute
+        minute = now.minute
+        # Calculate the period
+        period = (hour * 4) + (minute // 15)
+        # Return the period
+        return period
+    elif utils.get_current_time() < datetime.time(17, 0) and utils.get_current_time() > datetime.time(13, 0):
+        # It's the afternoon, so subtract 13 from the hour
+        # Calculate which 15 minute period it is
+        # Get the current time
+        now = utils.get_current_time()
+        # Get the current hour
+        hour = now.hour - 13
+        # Get the current minute
+        minute = now.minute
+        # Calculate the period
+        period = (hour * 4) + (minute // 15)
+        # Return the period
+        return period
+    else:
+        # The current period is not during the working day
+        return None
+
+async def getaadtoken():
+    # Get Azure AD token
+    print("Getting Azure AD token...")
+    # Create task to get the token and flash the onboard LED whilst the task executes
+    t_aadtoken = asyncio.create_task(msonlinehandler.aadtoken())
+    t_flashled = asyncio.create_task(hardware.obled.blinkonboardledforever(0.5))
+    # Wait for the token to be created and then cancel the flash task
+    await t_aadtoken
+    t_flashled.cancel()
+
+async def gettodayscalendar():
+    """ Gets today's calendar.
+    Gets today's calendar from Microsoft Graph and returns it as a list. Returns None if there are no events.
+    Returns:
+        list: A list of events for today.
+    """
+    # Get today's calendar
+    # If calendar is empty, it will return an empty list
+    print("Getting today's calendar...")
+    t_getcalendar = asyncio.create_task(msonlinehandler.gettodayscalendar())
+    cal_output = await t_getcalendar
+    if cal_output != None:
+        print("Today's Calendar")
+        print(cal_output)
+        return cal_output
+    else:
+        print("No events today")
+        return None
+
 async def main():
+
+    # Blank all pixels
+    hardware.pixelring.fill(color.BLACK)
+
+    # Get the main event loop
+    loop = asyncio.get_event_loop()
+
     print("Starting main program")
     
     print("Connecting to WiFi...")
@@ -122,71 +160,31 @@ async def main():
     print("Setting RTC...")
     await timehandler.set_rtc_time(secrets)
 
-    # Get Azure AD token
-    print("Getting Azure AD token...")
-    msapi = msonlinehandler.aadtoken()
-    await msapi.gettoken()
-
+    # Get an aad access token
+    # If an exception is raised, catch it and print the error, light the onboard neopixel red and exit
+    try:
+        loop.run_until_complete(getaadtoken())
+    except Exception as e:
+        print("Error getting AAD token: {}".format(e))
+        hardware.obpixel = (color.RED)
     # Get today's calendar
-    # If calendar is empty, it will return an empty list
-    print("Getting today's calendar...")
-    cal_output = await msapi.gettodayscalendar()
-    if cal_output != None:
-        print("Today's Calendar")
-        print(cal_output)
-    else:
-        print("No events today")
-        return
+    # If an exception is raised, catch it and print the error, light the onboard neopixel red and exit
+    try:
+        cal_today = loop.run_until_complete(gettodayscalendar())
+    except Exception as e:
+        print("Error getting calendar: {}".format(e))
+        hardware.obpixel = (color.RED)
     
-    # Loop through each event
-    cal_today = []
-    for event in cal_output:
-        # Convert the start time to datetime object from ISO format with 8 fractional seconds
-        date_str, time_str = event["start"].split('T')
-        year, month, day = [int(x) for x in date_str.split('-')]
-        # Dump the fractional seconds
-        time_str, _ = time_str.split('.')
-        hour, minute, second = [int(x) for x in time_str.split(':')]
-        es = datetime.datetime(year, month, day, hour, minute, second)
-        # Convert the start time to datetime object from ISO format with 8 fractional seconds
-        date_str, time_str = event["end"].split('T')
-        year, month, day = [int(x) for x in date_str.split('-')]
-        # Dump the fractional seconds
-        time_str, _ = time_str.split('.')
-        hour, minute, second = [int(x) for x in time_str.split(':')]
-        ee = datetime.datetime(year, month, day, hour, minute, second)
-        # Create a new dictionary object
-        newevent = {}
-        # Add the start time to the dictionary
-        newevent["start"] = es
-        # Add the end time to the dictionary
-        newevent["end"] = ee
-        # Add the subject to the dictionary
-        newevent["subject"] = event["subject"]
-        # Append the new dictionary to the array
-        cal_today.append(newevent)
-    
-    # Sort the array by the start time
-    cal_today = sorted(cal_today, key=lambda k: k["start"])
+    ####### Override the calendar with the test calendar #######
+    cal_today = sample_events
 
     # Print the calendar and wait for input
     print("Today's calendar:")
     print(cal_today)
     input("Press enter to continue")
     
-    # Get the next event
-    nextevent = await get_next_event(cal_today)
-    print("Next event:")
-    print(nextevent)
-
-    # Get the next event once
-    await eventprocessing(cal_today)
-    
-    # Get the current time
-    now = datetime.datetime.now()
-        
     # Is it the morning or the afternoon?
-    if now < datetime.time(12, 0):
+    if utils.get_current_time() < datetime.time(12, 0):
         # Set the start time to 0800 and the finish time to 1200
         start_time = datetime.time(8, 0)
         finish_time = datetime.time(12, 0)
@@ -196,23 +194,37 @@ async def main():
         finish_time = datetime.time(17, 0)
 
     # Map events to periods
-    periods = await mapcalendar(cal_today, start_time, finish_time, datetime.timedelta(minutes=30))
-    
+    t_periods = asyncio.create_task(mapcalendar(cal_today, start_time, finish_time, datetime.timedelta(minutes=15)))
+    # Get the current period
+    t_currentperiod = asyncio.create_task(getcurrentperiod())
+    # Wait for the tasks to complete
+    r_periods = await asyncio.gather(t_periods, t_currentperiod)
+    # Get the periods and current period from the results
+    periods, currentperiod = r_periods
+    # Get the current event
+    currentevent = await calendarhandler.eventprocessing(cal_today)
+    # Create task to write the current event to the eink display
+    t_writeevent = asyncio.create_task(writeepd(currentevent))
     # Illuminate the neopixel ring to show the periods
-    await pixelcontroller.illuminateperiods(periods)
-
-    # Create a pixel pulse loop
-    pixelpulseloop = asyncio.get_event_loop()
-    pixelpulseloop.create_task(pixelcontroller.pulsepixel(1))
-
-    #########################
-    ##### Start the main loop
-    #########################
-    # loop = asyncio.get_event_loop()
-
-    # # Return the time rounded up to the nearest 5 minutes
-    # next5mintime = datetime.datetime.now().replace(minute=0, second=0, microsecond=0) + datetime.timedelta(minutes=5)
-    # loop.call_at(next5mintime, eventprocessing(cal_today))
+    t_illuminatering = asyncio.create_task(pixelcontroller.illuminateperiods(periods))
+    # Wait for the tasks to complete
+    await asyncio.gather(t_writeevent, t_illuminatering)
+    
+    
+    if currentperiod != None:
+        # Calculate the time to the next 15-minute mark
+        time_to_next_15_minute_mark = (15 - utils.get_current_time.minute % 15) * 60 - utils.get_current_time.second
+        print(f"Time to next 15-minute mark: {time_to_next_15_minute_mark} seconds")
+        t_flashcurrent = asyncio.wait_for(flashcurrentperiod(currentperiod, color.AMBER, 1), timeout=time_to_next_15_minute_mark)
+        try:
+            loop.run_until_complete(t_flashcurrent)
+        except asyncio.TimeoutError:
+            None
+        finally:
+            # Set the pixel to white
+            hardware.pixelring[currentperiod] = color.WHITE
+    else:
+        print("Not during the working day")
 
     print("Main program complete")
 
@@ -269,23 +281,7 @@ if runtest == True:
     asyncio.run(testing())
 
 # Run the main function
-# asyncio.run(main())
-
-# Blank all pixels
-hardware.pixelring.fill(color.BLACK)
-
-bobbins = asyncio.run(mapcalendar(sample_events, datetime.time(8, 0), datetime.time(12, 0), datetime.timedelta(minutes=15)))
-asyncio.run(pixelcontroller.illuminateperiods(bobbins, 0.1))
-# Create a pixel pulse task
-loop = asyncio.get_event_loop()
-# Run the pulse task 3 times
-# for i in range(3):
-#     print(f"Running pulse task {i}")
-#     pulsetask = loop.create_task(pixelcontroller.pulsepixel(3, color.AMBER))
-#     loop.run_until_complete(pulsetask)
-#     time.sleep(2)
-
-asyncio.run(pixelcontroller.countdown(30, color.GREEN))
+asyncio.run(main())
 
 ##############################
 ### --- End of program --- ###

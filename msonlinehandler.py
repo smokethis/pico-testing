@@ -3,6 +3,9 @@ from my_secrets import secrets
 import esp01s
 import json
 import hardware
+import utils
+
+scope = 'Calendars.Read, offline_access'
 
 class aadtoken():
     # This class is used to get an AAD access token from the Azure AD endpoint using the device code grant.
@@ -48,11 +51,8 @@ class aadtoken():
         data = {
             'grant_type': 'device_code',
             'client_id': secrets["clientid"],
-            'scope': 'Calendars.Read'
+            'scope': scope
         }
-        # Flash the onboard LED to indicate the request is being sent
-        # ledtask = asyncio.create_task(led.blinkonboardledforever(0.5))
-        # asyncio.run(ledtask)
         # Send the request
         print("Getting AAD token...")
         response = await hardware.espwifi.placefullrequest(esp01s.requestcontent("POST", "https://login.microsoftonline.com/{}/oauth2/v2.0/devicecode".format(secrets["tenantid"]), headers=headers, data=data))
@@ -69,10 +69,6 @@ class aadtoken():
         devicecode = response.json()['device_code']
         verifyurl = response.json()['verification_uri']
         interval = response.json()['interval']
-        
-        # Stop flashing the onboard LED
-        # ledtask.cancel()
-        # await ledtask
 
         # Construct the message to display
         message = []
@@ -100,7 +96,7 @@ class aadtoken():
             'grant_type': 'urn:ietf:params:oauth:grant-type:device_code',
             'client_id': secrets["clientid"],
             'device_code': devicecode,
-            'scope': 'User.Read'
+            'scope': scope
         }
 
         # Loop requesting the access tokens until it is ready or the user declines the request
@@ -126,46 +122,105 @@ class aadtoken():
             else:
                 # There was an unexpected error, so raise an exception
                 raise Exception("Error getting AAD token. Status code: {}. Response: {}".format(response.status_code, response.json(['error_description'])))
-        
-        # return response.json()['access_token'], response.json()['refresh_token'], response.json()['id_token'], response.json()['scope'], response.json()['expires_in']
-        # self.refreshtoken = response.json()['refresh_token']
-        # self.idtoken = response.json()['id_token']
+        # Store token data
+        self.refreshtoken = response.json()['refresh_token']
         self.accesstoken = response.json()['access_token']
         self.scope = response.json()['scope']
         self.tokenexpiry = datetime.now() + timedelta(seconds = response.json()['expires_in'])
         # Token received
-        print("AAD token received")
-        # print(response.json())
-        # await epd.epdclear()  
+        print("Access token received")
     
-    async def gettodayscalendar(self):
-        # Use Microsoft Graph API to get today's calendar events for the user
+    async def getnewtokenfromrefresh(self):
+        # This function gets a new AAD token from the Azure AD endpoint.
+        # Create a task to clear the display
+        # cleardisplay = asyncio.create_task(epd.epdclear())
         # Define the request parameters
         headers = {
-            'Authorization': 'Bearer {}'.format(self.accesstoken),
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/x-www-form-urlencoded'
         }
-        # Define the time parameters
-        today = datetime.now()
-        startdatetime = today.replace(hour=0, minute=0, second=0, microsecond=0)
-        enddatetime = today.replace(hour=23, minute=59, second=59, microsecond=999999)
-        # Define the select parameters
-        select = "id,subject,start,end"
+        data = {
+            'grant_type': 'refresh_token',
+            'client_id': secrets["clientid"],
+            'refresh_token': self.refreshtoken,
+            'scope': scope
+        }
         # Send the request
-        response = await hardware.espwifi.placefullrequest(esp01s.requestcontent("GET", "https://graph.microsoft.com/v1.0/me/calendarview?startdatetime={}&enddatetime={}&$select={}".format(startdatetime, enddatetime, select), headers=headers))
+        print("Getting AAD token...")
+        response = await hardware.espwifi.placefullrequest(esp01s.requestcontent("POST", "https://login.microsoftonline.com/{}/oauth2/v2.0/token".format(secrets["tenantid"]), headers=headers, data=data))
+        print("Done")
+        
         # Check the response
         if response.status_code != 200:
             # There was an error, so raise an exception
-            raise Exception("Error getting calendar events. Status code: {}. Response: {}".format(response.status_code, response.json()))
-        # Place the response into a json object
-        responsejson = json.loads(response.text)
-        events = []
-        # Loop through the events
-        for event in responsejson['value']:
-            # Add the event to the list
-            events.append({'subject': event['subject'], 'start': event['start']['dateTime'], 'end': event['end']['dateTime']})
-        # Sort the events by start time
-        events.sort(key=lambda x: x['start'])
-        # Return the events
-        return events
+            raise Exception("Error getting AAD token. Status code: {}. Response: {}".format(response.status_code, response.text))
         
+        print(response.json())
+        # Store response data
+        self.refreshtoken = response.json()['refresh_token']
+        self.accesstoken = response.json()['access_token']
+        self.scope = response.json()['scope']
+        self.tokenexpiry = datetime.now() + timedelta(seconds = response.json()['expires_in'])
+        # Token received
+        print("Access token refreshed")
+
+async def gettodayscalendar(self):
+    # Use Microsoft Graph API to get today's calendar events for the user
+    # Define the request parameters
+    headers = {
+        'Authorization': 'Bearer {}'.format(self.accesstoken),
+        'Content-Type': 'application/json'
+    }
+    # Define the time parameters
+    today = utils.get_current_time()
+    startdatetime = today.replace(hour=0, minute=0, second=0, microsecond=0)
+    enddatetime = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+    # Define the select parameters
+    select = "id,subject,start,end"
+    # Send the request
+    response = await hardware.espwifi.placefullrequest(esp01s.requestcontent("GET", "https://graph.microsoft.com/v1.0/me/calendarview?startdatetime={}&enddatetime={}&$select={}".format(startdatetime, enddatetime, select), headers=headers))
+    # Check the response
+    if response.status_code != 200:
+        # There was an error, so raise an exception
+        raise Exception("Error getting calendar events. Status code: {}. Response: {}".format(response.status_code, response.json()))
+    # Place the response into a json object
+    responsejson = json.loads(response.text)
+    events = []
+    # Loop through the events
+    for event in responsejson['value']:
+        # Add the event to the list
+        events.append({'subject': event['subject'], 'start': event['start']['dateTime'], 'end': event['end']['dateTime']})
+    # Sort the events by start time
+    events.sort(key=lambda x: x['start'])
+    # Loop through each event
+    cal_today = []
+    for event in events:
+        # Convert the start time to datetime object from ISO format with 8 fractional seconds
+        date_str, time_str = event["start"].split('T')
+        year, month, day = [int(x) for x in date_str.split('-')]
+        # Dump the fractional seconds
+        time_str, _ = time_str.split('.')
+        hour, minute, second = [int(x) for x in time_str.split(':')]
+        es = datetime.datetime(year, month, day, hour, minute, second)
+        # Convert the start time to datetime object from ISO format with 8 fractional seconds
+        date_str, time_str = event["end"].split('T')
+        year, month, day = [int(x) for x in date_str.split('-')]
+        # Dump the fractional seconds
+        time_str, _ = time_str.split('.')
+        hour, minute, second = [int(x) for x in time_str.split(':')]
+        ee = datetime.datetime(year, month, day, hour, minute, second)
+        # Create a new dictionary object
+        newevent = {}
+        # Add the start time to the dictionary
+        newevent["start"] = es
+        # Add the end time to the dictionary
+        newevent["end"] = ee
+        # Add the subject to the dictionary
+        newevent["subject"] = event["subject"]
+        # Append the new dictionary to the array
+        cal_today.append(newevent)
+    
+    # Sort the array by the start time
+    cal_today = sorted(cal_today, key=lambda k: k["start"])
+
+    # Return the array
+    return cal_today
