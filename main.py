@@ -270,28 +270,22 @@ if runtest == True:
 
 # Run the main function
 # asyncio.run(main())
+
 # Blank all pixels
 hardware.pixelring.fill(color.BLACK)
-# Test neopixel addressing
-# for i in range(16):
-#     hardware.pixelring[i - 1] = color.RED
-#     print(f"Pixel {i} illuminated")
-#     time.sleep(0.5)
-#     hardware.pixelring.fill(color.BLACK)
-
-
 
 bobbins = asyncio.run(mapcalendar(sample_events, datetime.time(8, 0), datetime.time(12, 0), datetime.timedelta(minutes=15)))
 asyncio.run(pixelcontroller.illuminateperiods(bobbins, 0.1))
 # Create a pixel pulse task
 loop = asyncio.get_event_loop()
 # Run the pulse task 3 times
-for i in range(3):
-    print(f"Running pulse task {i}")
-    pulsetask = loop.create_task(pixelcontroller.pulsepixel(3, color.AMBER))
-    loop.run_until_complete(pulsetask)
-    time.sleep(2)
+# for i in range(3):
+#     print(f"Running pulse task {i}")
+#     pulsetask = loop.create_task(pixelcontroller.pulsepixel(3, color.AMBER))
+#     loop.run_until_complete(pulsetask)
+#     time.sleep(2)
 
+asyncio.run(pixelcontroller.countdown(30, color.GREEN))
 
 ##############################
 ### --- End of program --- ###

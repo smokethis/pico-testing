@@ -65,7 +65,7 @@ async def illuminateperiods(periods, brightness=0.1, colour=color.AMBER):
         pixelnumber = period
         hardware.pixelring[pixelnumber] = new_color
 
-async def pulsepixel(pixelnumber, colour, highcolour=color.WHITE, num_steps=10):
+async def pulsepixel(pixelnumber, colour, highcolour=color.WHITE, num_steps=20):
     """
     Pulse a pixel on the ring.
     Parameters:
@@ -78,33 +78,74 @@ async def pulsepixel(pixelnumber, colour, highcolour=color.WHITE, num_steps=10):
     brightness_factor = 0.4
     # Divide each color component by the brightness factor
     new_color = tuple(int(component * brightness_factor) for component in colour)
-    # Loop through each step in the gradient
-    for i in range(num_steps):
-        # Calculate the current color as a linear interpolation between the two colors
-        current_color = (
-            int(lerp(new_color[0], highcolour[0], i/num_steps)),
-            int(lerp(new_color[1], highcolour[1], i/num_steps)),
-            int(lerp(new_color[2], highcolour[2], i/num_steps))
-        )
-        hardware.pixelring[pixelnumber] = current_color
+    
+    while True:
+        # Loop through each step in the gradient
+        for i in range(num_steps):
+            # Calculate the current color as a linear interpolation between the two colors
+            current_color = (
+                int(lerp(new_color[0], highcolour[0], i/num_steps)),
+                int(lerp(new_color[1], highcolour[1], i/num_steps)),
+                int(lerp(new_color[2], highcolour[2], i/num_steps))
+            )
+            hardware.pixelring[pixelnumber] = current_color
+            # Pause for a short time to see the transition
+            await asyncio.sleep(0.1)
+        # Set the pixel to the high colour
+        hardware.pixelring[pixelnumber] = highcolour
         # Pause for a short time to see the transition
-        await asyncio.sleep(0.1)
-    # Set the pixel to the high colour
-    hardware.pixelring[pixelnumber] = highcolour
-    # Pause for a short time to see the transition
-    await asyncio.sleep(0.25)
-    # Loop through each step in the gradient
-    for i in range(num_steps):
-        # Calculate the current color as a linear interpolation between the two colors
-        current_color = (
-            int(lerp(highcolour[0], new_color[0], i/num_steps)),
-            int(lerp(highcolour[1], new_color[1], i/num_steps)),
-            int(lerp(highcolour[2], new_color[2], i/num_steps))
-        )
-        hardware.pixelring[pixelnumber] = current_color
+        await asyncio.sleep(0.25)
+        # Loop through each step in the gradient
+        for i in range(num_steps):
+            # Calculate the current color as a linear interpolation between the two colors
+            current_color = (
+                int(lerp(highcolour[0], new_color[0], i/num_steps)),
+                int(lerp(highcolour[1], new_color[1], i/num_steps)),
+                int(lerp(highcolour[2], new_color[2], i/num_steps))
+            )
+            hardware.pixelring[pixelnumber] = current_color
+            # Pause for a short time to see the transition
+            await asyncio.sleep(0.1)
+        # Set the pixel to the low colour
+        hardware.pixelring[pixelnumber] = new_color
         # Pause for a short time to see the transition
+        await asyncio.sleep(0.25)
+
+async def countdown(count, colour):
+    """
+    Count down from the number provided using the pixel ring.
+    Parameters:
+        count (int): The number to count down from in seconds
+        colour (tuple): The pixel colour to use for the countdown
+    """
+    # Set the brightness factor
+    brightness_factor = 0.4
+    # Divide each color component by the brightness factor
+    base_color = tuple(int(component * brightness_factor) for component in colour)
+    
+    # Use an attractor to get the users attention that a coundown is about to start
+    for i in range(16):
+        hardware.pixelring[i - 1] = base_color
         await asyncio.sleep(0.1)
-    # Set the pixel to the low colour
-    hardware.pixelring[pixelnumber] = colour
-    # Pause for a short time to see the transition
-    await asyncio.sleep(0.25)
+
+    # If the count is less than 16, reduce the number of pixels to illuminate
+    if count < 16:
+        for pixelnumber in range(count):
+            hardware.pixelring[pixelnumber] = base_color
+        seconds_per_pixel = 1
+    else:
+        # Divide the number by 16 to get the number of seconds per pixel
+        seconds_per_pixel = count / 16
+        # Illuminate the ring
+        hardware.pixelring.fill(base_color)
+
+    # Loop through each pixel
+    for pixelnumber in range(16):
+        # Set the pixel to the base colour
+        hardware.pixelring[pixelnumber] = base_color
+        # Pulse this pixel to indicate it is active
+        asyncio.wait_for((pulsepixel(pixelnumber, colour, colour, 8)), seconds_per_pixel)
+        # # Pause for the number of seconds per pixel
+        # await asyncio.sleep(seconds_per_pixel)
+        # Set this pixel to off
+        hardware.pixelring[pixelnumber] = color.BLACK
