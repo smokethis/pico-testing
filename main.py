@@ -147,6 +147,7 @@ async def main():
 
     # Blank all pixels
     hardware.pixelring.fill(color.BLACK)
+    hardware.obpixel = (color.BLACK)
 
     # Get the main event loop
     loop = asyncio.get_event_loop()
