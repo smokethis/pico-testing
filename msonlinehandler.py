@@ -5,7 +5,7 @@ import json
 import hardware
 import utils
 
-scope = 'Calendars.Read, offline_access'
+scope = 'Calendars.Read offline_access'
 
 class aadtoken():
     # This class is used to get an AAD access token from the Azure AD endpoint using the device code grant.
@@ -163,11 +163,11 @@ class aadtoken():
         # Token received
         print("Access token refreshed")
 
-async def gettodayscalendar(self):
+async def gettodayscalendar(tokenobject):
     # Use Microsoft Graph API to get today's calendar events for the user
     # Define the request parameters
     headers = {
-        'Authorization': 'Bearer {}'.format(self.accesstoken),
+        'Authorization': 'Bearer {}'.format(tokenobject.accesstoken),
         'Content-Type': 'application/json'
     }
     # Define the time parameters

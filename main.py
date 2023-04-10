@@ -84,7 +84,7 @@ async def getcurrentperiod():
         int: The current period.
     """
     # Is it the morning or the afternoon?
-    if utils.get_current_time() < datetime.time(12, 0):
+    if utils.get_current_time().time() < datetime.time(12, 0):
         # It's the morning, so subtract 8 from the hour
         # Calculate which 15 minute period it is
         # Get the current time
@@ -97,7 +97,7 @@ async def getcurrentperiod():
         period = (hour * 4) + (minute // 15)
         # Return the period
         return period
-    elif utils.get_current_time() < datetime.time(17, 0) and utils.get_current_time() > datetime.time(13, 0):
+    elif utils.get_current_time().time() < datetime.time(17, 0) and utils.get_current_time() > datetime.time(13, 0):
         # It's the afternoon, so subtract 13 from the hour
         # Calculate which 15 minute period it is
         # Get the current time
@@ -118,7 +118,7 @@ async def getaadtoken():
     # Get Azure AD token
     print("Getting Azure AD token...")
     # Create task to get the token and flash the onboard LED whilst the task executes
-    t_aadtoken = asyncio.create_task(msonlinehandler.aadtoken())
+    t_aadtoken = asyncio.create_task(tokenobject.gettoken())
     t_flashled = asyncio.create_task(hardware.obled.blinkonboardledforever(0.5))
     # Wait for the token to be created and then cancel the flash task
     await t_aadtoken
@@ -133,7 +133,7 @@ async def gettodayscalendar():
     # Get today's calendar
     # If calendar is empty, it will return an empty list
     print("Getting today's calendar...")
-    t_getcalendar = asyncio.create_task(msonlinehandler.gettodayscalendar())
+    t_getcalendar = asyncio.create_task(msonlinehandler.gettodayscalendar(tokenobject))
     cal_output = await t_getcalendar
     if cal_output != None:
         print("Today's Calendar")
@@ -147,7 +147,7 @@ async def main():
 
     # Blank all pixels
     hardware.pixelring.fill(color.BLACK)
-    hardware.obpixel = (color.BLACK)
+    hardware.obpixel.fill(color.BLACK)
 
     # Get the main event loop
     loop = asyncio.get_event_loop()
@@ -162,19 +162,25 @@ async def main():
     await timehandler.set_rtc_time(secrets)
 
     # Get an aad access token
+    # Intialise the aadtoken object
+    global tokenobject
+    tokenobject = msonlinehandler.aadtoken()
+
     # If an exception is raised, catch it and print the error, light the onboard neopixel red and exit
     try:
         loop.run_until_complete(getaadtoken())
     except Exception as e:
         print("Error getting AAD token: {}".format(e))
-        hardware.obpixel = (color.RED)
+        hardware.obpixel.fill(color.RED)
+        quit()
     # Get today's calendar
     # If an exception is raised, catch it and print the error, light the onboard neopixel red and exit
     try:
         cal_today = loop.run_until_complete(gettodayscalendar())
     except Exception as e:
         print("Error getting calendar: {}".format(e))
-        hardware.obpixel = (color.RED)
+        hardware.obpixel.fill(color.RED)
+        quit()
     
     ####### Override the calendar with the test calendar #######
     cal_today = sample_events
@@ -183,9 +189,9 @@ async def main():
     print("Today's calendar:")
     print(cal_today)
     input("Press enter to continue")
-    
+
     # Is it the morning or the afternoon?
-    if utils.get_current_time() < datetime.time(12, 0):
+    if utils.get_current_time().time() < datetime.time(12, 0):
         # Set the start time to 0800 and the finish time to 1200
         start_time = datetime.time(8, 0)
         finish_time = datetime.time(12, 0)
